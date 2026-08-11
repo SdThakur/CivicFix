@@ -29,22 +29,72 @@ async def create_issue(
     return IssueResponse.model_validate(issue)
 
 
+def parse_enum_or_none(enum_cls: Any, raw_val: Optional[str]) -> Any:
+    if not raw_val or not isinstance(raw_val, str):
+        return None
+    cleaned = raw_val.strip().upper().replace(" ", "_").replace("-", "_")
+
+    for member in enum_cls:
+        if member.value == cleaned or member.name == cleaned:
+            return member
+
+    if enum_cls == ReportCategory:
+        if "ROAD" in cleaned or "SIDEWALK" in cleaned or "PAVEMENT" in cleaned:
+            return ReportCategory.POTHOLE
+        if "WATER" in cleaned or "DRAIN" in cleaned or "SEWER" in cleaned:
+            return ReportCategory.WATER_LEAK
+        if "LIGHT" in cleaned or "LAMP" in cleaned:
+            return ReportCategory.STREETLIGHT
+        if "SIGNAL" in cleaned or "TRAFFIC" in cleaned:
+            return ReportCategory.TRAFFIC_SIGNAL
+        if "GARBAGE" in cleaned or "WASTE" in cleaned:
+            return ReportCategory.TRASH
+        return ReportCategory.OTHER
+
+    if enum_cls == IssueStatus:
+        if cleaned in ("SUBMITTED", "PENDING", "NEW", "REVIEW", "UNDER_REVIEW"):
+            return IssueStatus.OPEN
+        if cleaned in ("VERIFICATION", "IN_PROGRESS", "ASSIGNED", "WORKING"):
+            return IssueStatus.IN_PROGRESS
+        if cleaned in ("RESOLVED", "COMPLETED", "FIXED"):
+            return IssueStatus.RESOLVED
+        if cleaned in ("CLOSED", "REJECTED", "CANCELLED"):
+            return IssueStatus.CLOSED
+        return None
+
+    if enum_cls == PriorityLevel:
+        if cleaned in ("URGENT", "CRITICAL", "EMERGENCY"):
+            return PriorityLevel.URGENT
+        if cleaned in ("HIGH", "SEVERE"):
+            return PriorityLevel.HIGH
+        if cleaned in ("MEDIUM", "MODERATE", "NORMAL"):
+            return PriorityLevel.MEDIUM
+        if cleaned in ("LOW", "MINOR"):
+            return PriorityLevel.LOW
+
+    return None
+
+
 @router.get("/", response_model=List[IssueResponse])
 async def list_issues(
-    status_filter: Optional[IssueStatus] = Query(None, alias="status"),
-    category: Optional[ReportCategory] = None,
-    priority: Optional[PriorityLevel] = None,
+    status: Optional[str] = Query(None),
+    category: Optional[str] = Query(None),
+    priority: Optional[str] = Query(None),
     department_id: Optional[int] = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
 ) -> List[IssueResponse]:
-    """List issues with optional filters."""
+    """List issues with optional flexible string filters."""
+    parsed_status = parse_enum_or_none(IssueStatus, status)
+    parsed_category = parse_enum_or_none(ReportCategory, category)
+    parsed_priority = parse_enum_or_none(PriorityLevel, priority)
+
     issues, _ = await issue_service.get_issues(
         db=db,
-        status=status_filter,
-        category=category,
-        priority=priority,
+        status=parsed_status,
+        category=parsed_category,
+        priority=parsed_priority,
         department_id=department_id,
         skip=skip,
         limit=limit,
