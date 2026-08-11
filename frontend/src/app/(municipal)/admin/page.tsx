@@ -27,13 +27,15 @@ import {
   BarChart, 
   Bar 
 } from 'recharts';
-import { analyticsApi } from '@/lib/api';
+import Link from 'next/link';
+import { analyticsApi, reportApi } from '@/lib/api';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
 
 export default function AdminAnalyticsPage() {
   const [stats, setStats] = useState<any>(null);
   const [resolutionTimes, setResolutionTimes] = useState<any[]>([]);
+  const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,12 +43,14 @@ export default function AdminAnalyticsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [dashboardData, resData] = await Promise.all([
+      const [dashboardData, resData, reportsData] = await Promise.all([
         analyticsApi.getDashboard(),
         analyticsApi.getResolutionTimes().catch(() => []),
+        reportApi.list().catch(() => []),
       ]);
       setStats(dashboardData);
       setResolutionTimes(Array.isArray(resData) ? resData : []);
+      setReports(Array.isArray(reportsData) ? reportsData : []);
     } catch (err: any) {
       setError('Unable to load analytics data. Ensure the backend server is online.');
     } finally {
@@ -276,7 +280,92 @@ export default function AdminAnalyticsPage() {
                   <span>Open: <strong className="text-amber-400">{n.open_issues}</strong></span>
                 </div>
               </div>
-            ))}
+      {/* Live Citizen Reports & Triage Feed Table */}
+      <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+          <div>
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-blue-400" /> Live Citizen Reports & Incoming Triage Tickets
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Review, inspect, and route reported infrastructure hazards to department crews
+            </p>
+          </div>
+          <Link
+            href="/service-requests"
+            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 self-start sm:self-auto"
+          >
+            <span>Open Service Requests</span>
+            <TrendingUp className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        {loading ? (
+          <div className="p-8 flex items-center justify-center text-slate-500">
+            <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+          </div>
+        ) : reports.length === 0 ? (
+          <div className="p-8 text-center text-slate-500 text-sm">
+            No active citizen reports logged yet.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-slate-800 text-slate-400 font-semibold uppercase tracking-wider">
+                  <th className="py-3 px-3">Tracking ID</th>
+                  <th className="py-3 px-3">Category</th>
+                  <th className="py-3 px-3">Title & Details</th>
+                  <th className="py-3 px-3">Location</th>
+                  <th className="py-3 px-3">Priority Score</th>
+                  <th className="py-3 px-3">Status</th>
+                  <th className="py-3 px-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/80 text-slate-300">
+                {reports.map((r: any) => (
+                  <tr key={r.id} className="hover:bg-slate-900/50 transition-colors">
+                    <td className="py-3 px-3 font-mono font-bold text-blue-400">
+                      {r.tracking_number || `REP-${r.id}`}
+                    </td>
+                    <td className="py-3 px-3">
+                      <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-800 text-slate-200 border border-slate-700">
+                        {r.category || 'OTHER'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 max-w-xs">
+                      <div className="font-bold text-white truncate">{r.title}</div>
+                      <div className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">{r.description}</div>
+                    </td>
+                    <td className="py-3 px-3 text-slate-400 max-w-xs truncate">
+                      📍 {r.address || `${r.latitude?.toFixed(4)}, ${r.longitude?.toFixed(4)}`}
+                    </td>
+                    <td className="py-3 px-3 font-bold text-white">
+                      {r.priority_score ?? 50}/100
+                    </td>
+                    <td className="py-3 px-3">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                        r.status === 'RESOLVED'
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          : r.status === 'IN_PROGRESS'
+                          ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                          : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                      }`}>
+                        {r.status?.replace('_', ' ') || 'SUBMITTED'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 text-right">
+                      <Link
+                        href="/service-requests"
+                        className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white font-semibold transition-colors text-[11px]"
+                      >
+                        Triage Ticket
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
