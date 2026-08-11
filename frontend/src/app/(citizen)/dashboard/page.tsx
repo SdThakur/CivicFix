@@ -214,24 +214,24 @@ function DashboardContent() {
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <span className="text-xs font-mono px-2 py-1 rounded bg-slate-900 text-slate-400 border border-slate-800">
-                      REP-{report.id}
+                    <span className="text-xs font-mono px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold">
+                      {report.tracking_number || `REP-${report.id}`}
                     </span>
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">
                       {report.category || 'General'}
                     </span>
                     <span
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
                         report.status === 'RESOLVED'
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                          : report.status === 'IN_PROGRESS'
-                          ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                          : report.status === 'IN_PROGRESS' || report.status === 'ASSIGNED'
+                          ? 'bg-blue-500/10 text-blue-400 border border-blue-500/30'
                           : report.status === 'VERIFICATION'
-                          ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                          : 'bg-slate-800 text-slate-300 border border-slate-700'
+                          ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                          : 'bg-sky-500/10 text-sky-400 border border-sky-500/30'
                       }`}
                     >
-                      {report.status?.replace('_', ' ')}
+                      {report.status?.replace('_', ' ') || 'SUBMITTED'}
                     </span>
                   </div>
 
@@ -251,30 +251,65 @@ function DashboardContent() {
                   )}
                   {report.address && (
                     <div className="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-slate-500" />
+                      <MapPin className="w-3.5 h-3.5 text-blue-400" />
                       <span>{report.address}</span>
                     </div>
                   )}
                 </div>
 
+                {/* Progress Tracker Bar */}
+                <div className="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between text-xs text-slate-400 font-medium">
+                    <span className="flex items-center gap-1.5 text-emerald-400 font-semibold">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> 1. Report Submitted
+                    </span>
+                    <span className={report.status !== 'SUBMITTED' ? 'text-blue-400 font-semibold' : 'text-slate-500'}>
+                      2. AI Triage & Dept Route
+                    </span>
+                    <span className={report.status === 'IN_PROGRESS' || report.status === 'RESOLVED' ? 'text-amber-400 font-semibold' : 'text-slate-500'}>
+                      3. Crew Dispatched
+                    </span>
+                    <span className={report.status === 'RESOLVED' ? 'text-emerald-400 font-semibold' : 'text-slate-500'}>
+                      4. Fix Verified
+                    </span>
+                  </div>
+                  <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-400 transition-all duration-500"
+                      style={{
+                        width: report.status === 'RESOLVED' ? '100%' : report.status === 'IN_PROGRESS' ? '70%' : report.status === 'UNDER_REVIEW' ? '45%' : '25%',
+                      }}
+                    />
+                  </div>
+                </div>
+
                 {/* Status and Action bar */}
-                <div className="flex items-center justify-between pt-3 border-t border-slate-800/80">
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-800/80">
                   <div className="flex items-center gap-4 text-xs text-slate-400">
                     <span>Priority Score: <strong className="text-white">{report.priority_score ?? (report.priority === 'CRITICAL' ? 90 : report.priority === 'HIGH' ? 75 : 50)}/100</strong></span>
-                    <span>Department: <strong className="text-slate-300">{report.department_code || 'Public Works'}</strong></span>
+                    <span>Target SLA: <strong className="text-slate-300">48 Hours</strong></span>
                   </div>
 
-                  <button
-                    onClick={() => handleUpvote(report.id)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
-                      upvotedIds.has(report.id)
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-blue-500/50'
-                    }`}
-                  >
-                    <ThumbsUp className="w-3.5 h-3.5" />
-                    <span>Upvote ({report.upvotes || 0})</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/map?lat=${report.latitude || 37.7749}&lng=${report.longitude || -122.4194}`}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-blue-500 text-xs font-semibold transition-colors"
+                    >
+                      <MapPin className="w-3.5 h-3.5 text-blue-400" />
+                      <span>View on City Map</span>
+                    </Link>
+                    <button
+                      onClick={() => handleUpvote(report.id)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
+                        upvotedIds.has(report.id)
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-blue-500/50'
+                      }`}
+                    >
+                      <ThumbsUp className="w-3.5 h-3.5" />
+                      <span>Upvote ({report.upvotes || 0})</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
