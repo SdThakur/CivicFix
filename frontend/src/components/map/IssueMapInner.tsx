@@ -125,6 +125,7 @@ const userLocationIcon = L.divIcon({
 function MapController({
   selectedIssue,
   issues,
+  initialCenter,
   userPos,
   setUserPos,
   setLocating,
@@ -132,6 +133,7 @@ function MapController({
 }: {
   selectedIssue: Issue | null;
   issues: Issue[];
+  initialCenter?: { lat: number; lng: number } | null;
   userPos: { lat: number; lng: number; accuracy: number } | null;
   setUserPos: (pos: { lat: number; lng: number; accuracy: number } | null) => void;
   setLocating: (val: boolean) => void;
@@ -140,7 +142,14 @@ function MapController({
   const map = useMap();
   const hasAutoLocated = useRef(false);
 
-  // Auto-locate user immediately when map mounts
+  // Initial center flyTo if target location is provided
+  useEffect(() => {
+    if (initialCenter?.lat && initialCenter?.lng) {
+      safeFlyTo(map, initialCenter.lat, initialCenter.lng, 16, 1.2);
+    }
+  }, [map, initialCenter]);
+
+  // Auto-locate user GPS without overriding initial target location
   useEffect(() => {
     if (!hasAutoLocated.current && typeof navigator !== 'undefined' && navigator.geolocation) {
       hasAutoLocated.current = true;
@@ -152,13 +161,14 @@ function MapController({
           setUserPos({ lat: latitude, lng: longitude, accuracy });
           setLocating(false);
 
-          // Safely fly directly to precise user position on initial load
-          safeFlyTo(map, latitude, longitude, 16, 1.5);
+          // Only fly to user location if no specific target location/initialCenter was provided
+          if (!initialCenter && !selectedIssue) {
+            safeFlyTo(map, latitude, longitude, 16, 1.5);
+          }
         },
         (error) => {
           setLocating(false);
-          // If GPS denied/unavailable, fit bounds to existing issues
-          if (issues.length > 0) {
+          if (!initialCenter && issues.length > 0) {
             const validPoints = issues
               .filter((i) => i.location?.latitude && i.location?.longitude)
               .map((i) => [i.location!.latitude, i.location!.longitude] as [number, number]);
@@ -176,7 +186,7 @@ function MapController({
         }
       );
     }
-  }, [map, setUserPos, setLocating, issues]);
+  }, [map, setUserPos, setLocating, issues, initialCenter, selectedIssue]);
 
   // Handle clicking an issue from the list
   useEffect(() => {
@@ -199,52 +209,34 @@ function GeolocationButton({
   setUserPos,
   locating,
   setLocating,
-  setLocError,
 }: {
   setUserPos: (pos: { lat: number; lng: number; accuracy: number } | null) => void;
   locating: boolean;
   setLocating: (val: boolean) => void;
-  setLocError: (err: string | null) => void;
 }) {
   const map = useMap();
 
   const handleLocateMe = useCallback(() => {
-    if (!navigator.geolocation) {
-      setLocError('Geolocation is not supported by your browser.');
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      alert('Geolocation is not supported by your browser.');
       return;
     }
 
     setLocating(true);
-    setLocError(null);
-
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude, accuracy } = position.coords;
         setUserPos({ lat: latitude, lng: longitude, accuracy });
         setLocating(false);
-
-        // Center on precise coordinates safely
-        safeFlyTo(map, latitude, longitude, 17, 1.5);
+        safeFlyTo(map, latitude, longitude, 17, 1.2);
       },
       (error) => {
         setLocating(false);
-        let msg = 'Unable to retrieve your location.';
-        if (error.code === error.PERMISSION_DENIED) {
-          msg = 'Location access denied. Please allow location permissions in your browser.';
-        } else if (error.code === error.POSITION_UNAVAILABLE) {
-          msg = 'Location information is currently unavailable.';
-        } else if (error.code === error.TIMEOUT) {
-          msg = 'Location request timed out. Please try again.';
-        }
-        setLocError(msg);
+        alert('Could not acquire your GPS position. Please check location permissions.');
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
-      }
+      { enableHighAccuracy: true, timeout: 8000 }
     );
-  }, [map, setUserPos, setLocating, setLocError]);
+  }, [map, setUserPos, setLocating]);
 
   return (
     <div className="leaflet-top leaflet-right" style={{ pointerEvents: 'auto', marginTop: '12px', marginRight: '12px' }}>
@@ -271,15 +263,19 @@ interface IssueMapInnerProps {
   issues: Issue[];
   selectedIssue: Issue | null;
   onSelectIssue: (issue: Issue | null) => void;
+  initialCenter?: { lat: number; lng: number } | null;
 }
 
 export default function IssueMapInner({
   issues,
   selectedIssue,
   onSelectIssue,
+  initialCenter,
 }: IssueMapInnerProps) {
   // Neutral center fallback while auto-locating
-  const fallbackCenter: [number, number] = [37.7749, -122.4194];
+  const fallbackCenter: [number, number] = initialCenter?.lat && initialCenter?.lng
+    ? [initialCenter.lat, initialCenter.lng]
+    : [37.7749, -122.4194];
 
   // User GPS position state
   const [userPos, setUserPos] = useState<{ lat: number; lng: number; accuracy: number } | null>(null);

@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import dynamic from 'next/dynamic';
+import { useSearchParams } from 'next/navigation';
 import { MapPin, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
-import { issueApi } from '@/lib/api';
+import { issueApi, reportApi } from '@/lib/api';
 import type { Issue } from '@/types';
 
 // Dynamically import the map component to avoid SSR issues with Leaflet
@@ -22,7 +23,16 @@ const IssueMapInner = dynamic(() => import('@/components/map/IssueMapInner'), {
 const CATEGORY_FILTERS = ['ALL', 'Pothole', 'Streetlight', 'Trash', 'Sidewalk', 'Graffiti', 'Road Damage'];
 const STATUS_FILTERS = ['ALL', 'SUBMITTED', 'IN_PROGRESS', 'VERIFICATION', 'RESOLVED', 'UNDER_REVIEW'];
 
-export default function PublicMapPage() {
+function MapPageContent() {
+  const searchParams = useSearchParams();
+  const latParam = searchParams.get('lat');
+  const lngParam = searchParams.get('lng');
+
+  const initialCenter = latParam && lngParam ? {
+    lat: parseFloat(latParam),
+    lng: parseFloat(lngParam),
+  } : null;
+
   const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,15 +47,58 @@ export default function PublicMapPage() {
       const params: Record<string, string> = {};
       if (selectedCategory !== 'ALL') params.category = selectedCategory.toLowerCase();
       if (selectedStatus !== 'ALL') params.status = selectedStatus;
-      const data = await issueApi.list(params);
-      setIssues(Array.isArray(data) ? data : []);
+
+      const [issueData, reportData] = await Promise.all([
+        issueApi.list(params).catch(() => []),
+        reportApi.list().catch(() => []),
+      ]);
+
+      const formattedIssues: Issue[] = Array.isArray(issueData) ? [...issueData] : [];
+
+      // Convert citizen reports into mappable issues if not already present
+      if (Array.isArray(reportData)) {
+        reportData.forEach((r: any) => {
+          if (r.latitude && r.longitude) {
+            formattedIssues.push({
+              id: `REP-${r.id}` as any,
+              title: r.title || 'Citizen Report',
+              category: r.category || 'OTHER',
+              severity: (r.priority as any) || 'MEDIUM',
+              status: (r.status as any) || 'SUBMITTED',
+              description: r.description || '',
+              report_count: 1,
+              created_at: r.created_at,
+              location: {
+                id: r.id,
+                latitude: r.latitude,
+                longitude: r.longitude,
+                address: r.address || `${r.latitude.toFixed(4)}, ${r.longitude.toFixed(4)}`,
+              },
+            });
+          }
+        });
+      }
+
+      setIssues(formattedIssues);
+
+      // Auto-select target issue if initialCenter is provided
+      if (initialCenter) {
+        const target = formattedIssues.find((i) => {
+          if (!i.location?.latitude || !i.location?.longitude) return false;
+          return Math.abs(i.location.latitude - initialCenter.lat) < 0.0001 &&
+                 Math.abs(i.location.longitude - initialCenter.lng) < 0.0001;
+        });
+        if (target) {
+          setSelectedIssue(target);
+        }
+      }
     } catch (err: any) {
       setError('Unable to load issues from the server. Make sure the backend is running.');
       setIssues([]);
     } finally {
       setLoading(false);
     }
-  }, [selectedCategory, selectedStatus]);
+  }, [selectedCategory, selectedStatus, initialCenter?.lat, initialCenter?.lng]);
 
   useEffect(() => {
     fetchIssues();
@@ -151,6 +204,7 @@ export default function PublicMapPage() {
               issues={mappableIssues}
               selectedIssue={selectedIssue}
               onSelectIssue={setSelectedIssue}
+              initialCenter={initialCenter}
             />
           )}
         </div>
@@ -244,5 +298,13 @@ export default function PublicMapPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PublicMapPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-slate-400">Loading city map...</div>}>
+      <MapPageContent />
+    </Suspense>
   );
 }
