@@ -110,16 +110,22 @@ async def get_optional_current_user(
 
 
 
-def require_roles(*allowed_roles: UserRole) -> Callable[..., Any]:
+def require_roles(*allowed_roles: Any) -> Callable[..., Any]:
     """Role-based Access Control (RBAC) dependency factory."""
+    flat_roles = set()
+    for role in allowed_roles:
+        if isinstance(role, (list, tuple, set)):
+            flat_roles.update(role)
+        else:
+            flat_roles.add(role)
 
     async def role_checker(
         current_user: User = Depends(get_current_active_user),
     ) -> User:
-        if current_user.role not in allowed_roles:
+        if current_user.role not in flat_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"User with role '{current_user.role.value}' does not have sufficient permission. Required: {[r.value for r in allowed_roles]}",
+                detail=f"User with role '{current_user.role.value}' does not have sufficient permission. Required: {[r.value for r in flat_roles]}",
             )
         return current_user
 

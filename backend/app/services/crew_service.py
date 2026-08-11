@@ -1,8 +1,8 @@
 """Crew Service."""
 
 from typing import Optional, List, Dict, Any
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from app.models.crew import Crew, CrewMember, EmployeeSkill, CrewStatus
 
 class CrewService:
@@ -13,7 +13,7 @@ class CrewService:
         zone_id: Optional[int] = None,
         status: Optional[str] = None
     ) -> List[Crew]:
-        query = select(Crew)
+        query = select(Crew).options(selectinload(Crew.members))
         if department_id:
             query = query.where(Crew.department_id == department_id)
         if zone_id:
@@ -26,7 +26,7 @@ class CrewService:
 
     @staticmethod
     async def get_crew_by_id(db: AsyncSession, crew_id: int) -> Optional[Crew]:
-        result = await db.execute(select(Crew).where(Crew.id == crew_id))
+        result = await db.execute(select(Crew).options(selectinload(Crew.members)).where(Crew.id == crew_id))
         return result.scalars().first()
 
     @staticmethod
@@ -98,7 +98,7 @@ class CrewService:
         required_skill_ids: Optional[List[int]] = None
     ) -> List[Crew]:
         # Dummy implementation sorting by status
-        result = await db.execute(select(Crew).where(Crew.status == CrewStatus.ACTIVE))
+        result = await db.execute(select(Crew).options(selectinload(Crew.members)).where(Crew.status == CrewStatus.ACTIVE))
         return list(result.scalars().all())
 
     @staticmethod

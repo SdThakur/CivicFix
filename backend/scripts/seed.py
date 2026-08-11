@@ -24,6 +24,7 @@ from app.models.report import Report, ReportCategory, ReportStatus, PriorityLeve
 from app.models.issue import Issue, IssueStatus
 from app.models.work_order import WorkOrder, WorkOrderStatus
 from app.models.notification import Notification, NotificationType
+from app.models.crew import Crew, CrewMember, CrewStatus
 from app.services.sla_service import SLAService
 
 
@@ -79,13 +80,55 @@ async def seed_data(generate_mock: bool = False):
             session.add(u)
         await session.flush()
 
-        # 3. Seed Default SLA Rules
+        # 3. Create 1-Person Rapid Response Crew
+        print("Seeding 1-Person Rapid Response Crew & Member...")
+        crew = Crew(
+            name="Alpha Rapid Response Crew",
+            crew_code="CREW-ALPHA-01",
+            department_id=dept_map["DPW"].id,
+            supervisor_id=users[0].id,
+            status=CrewStatus.ACTIVE,
+            max_concurrent_jobs=3,
+            notes="Primary 1-person rapid response repair crew",
+        )
+        session.add(crew)
+        await session.flush()
+
+        crew_member = CrewMember(
+            crew_id=crew.id,
+            user_id=users[3].id,  # Field Technician (worker@civicfix.gov)
+            is_lead=True,
+            is_active=True,
+        )
+        session.add(crew_member)
+        await session.flush()
+
+        # 4. Seed Initial Sample Citizen Report & Issue
+        print("Seeding Initial Citizen Infrastructure Report...")
+        sample_report = Report(
+            tracking_number="REP-20260811-1063",
+            title="Sagging Overhead Utility Line",
+            category=ReportCategory.OTHER,
+            description="An overhead utility line, likely a communication or secondary service line, is observed to be significantly sagging or detached from its intended pathway. This condition indicates a failure in its tensioning or anchoring.",
+            status=ReportStatus.SUBMITTED,
+            priority=PriorityLevel.MEDIUM,
+            ai_score=50.0,
+            latitude=39.0837,
+            longitude=-76.7022,
+            address="Odenton Road, Odenton, MD",
+            neighborhood="Odenton",
+            user_id=users[4].id,  # Citizen Demo
+        )
+        session.add(sample_report)
+        await session.flush()
+
+        # 5. Seed Default SLA Rules
         print("Seeding Default SLA Rules...")
         await SLAService.seed_default_rules(session)
 
         await session.commit()
 
-    print("✅ Clean Database Initialization Complete! (0 mock reports)")
+    print("✅ Clean Database Initialization Complete! (1-person crew & sample report seeded)")
 
 
 if __name__ == "__main__":
