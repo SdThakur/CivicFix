@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   AlertCircle,
   Clock,
   CheckCircle2,
@@ -85,8 +85,8 @@ export default function ServiceRequestsPage() {
               <AlertCircle className="w-5 h-5 flex-shrink-0" />
               <span>{error}</span>
             </div>
-            <button 
-              onClick={fetchRequests} 
+            <button
+              onClick={fetchRequests}
               className="px-3 py-1.5 text-xs font-semibold bg-rose-500/20 hover:bg-rose-500/30 rounded-lg transition-colors"
             >
               Try Again
@@ -123,7 +123,7 @@ export default function ServiceRequestsPage() {
                       </td>
                       <td className="p-4 text-slate-300 font-medium truncate max-w-[200px]">{req.title}</td>
                       <td className="p-4">
-                        <select 
+                        <select
                           value={req.status}
                           onChange={(e) => updateStatus(req.id, e.target.value)}
                           className="bg-slate-800 border border-slate-700 text-xs font-semibold rounded-lg px-2 py-1 text-slate-300 focus:ring-1 focus:ring-blue-500 outline-none"
@@ -172,11 +172,11 @@ export default function ServiceRequestsPage() {
                       <MoreVertical className="w-4 h-4" />
                     </button>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="flex flex-col gap-1">
                       <span className="text-slate-500 font-medium">Status</span>
-                      <select 
+                      <select
                         value={req.status}
                         onChange={(e) => updateStatus(req.id, e.target.value)}
                         className="bg-slate-800 border border-slate-700 font-semibold rounded px-1.5 py-1 text-slate-300 outline-none max-w-[120px]"
@@ -198,11 +198,10 @@ export default function ServiceRequestsPage() {
                       <div className={`w-2 h-2 rounded-full ${getSlaColor(req.sla_status)}`}></div>
                       <span className="text-[10px] text-slate-400 font-medium">{req.resolution_due || 'No SLA'}</span>
                     </div>
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                      req.priority === 'CRITICAL' ? 'bg-rose-500/20 text-rose-400' :
-                      req.priority === 'HIGH' ? 'bg-amber-500/20 text-amber-400' :
-                      'bg-slate-800 text-slate-300'
-                    }`}>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${req.priority === 'CRITICAL' ? 'bg-rose-500/20 text-rose-400' :
+                        req.priority === 'HIGH' ? 'bg-amber-500/20 text-amber-400' :
+                          'bg-slate-800 text-slate-300'
+                      }`}>
                       {req.priority}
                     </span>
                   </div>

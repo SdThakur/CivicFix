@@ -280,6 +280,11 @@ export default function AdminAnalyticsPage() {
                   <span>Open: <strong className="text-amber-400">{n.open_issues}</strong></span>
                 </div>
               </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Live Citizen Reports & Triage Feed Table */}
       <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
