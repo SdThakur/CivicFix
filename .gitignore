@@ -1,0 +1,248 @@
+# =============================================================================
+# CivicFix — .gitignore
+# Covers: Python/FastAPI backend · Next.js frontend · Docker · OS · IDE
+# =============================================================================
+
+
+# =============================================================================
+# SECRETS & ENVIRONMENT — NEVER COMMIT THESE
+# =============================================================================
+.env
+.env.*
+!.env.example          # allow the template
+backend/.env
+backend/.env.*
+!backend/.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+frontend/.env.local
+frontend/.env.production
+**/*.pem
+**/*.key
+**/*.cert
+**/*.p12
+
+
+# =============================================================================
+# PYTHON / FASTAPI BACKEND
+# =============================================================================
+
+# Byte-compiled / optimised / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.env.bak
+pip-wheel-metadata/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+.eggs/
+MANIFEST
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+nosetests.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# MyPy / type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+
+# Ruff / linting
+.ruff_cache/
+
+# Alembic auto-generated env cache (not the migrations themselves)
+backend/alembic/__pycache__/
+
+# Profiling
+*.prof
+
+# IPython / Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+
+# =============================================================================
+# DATABASE FILES
+# =============================================================================
+*.db
+*.sqlite
+*.sqlite3
+backend/civicfix.db
+backend/test.db
+*.db-shm
+*.db-wal
+
+
+# =============================================================================
+# NEXT.JS / FRONTEND
+# =============================================================================
+
+# Dependencies
+frontend/node_modules/
+node_modules/
+
+# Build output
+frontend/.next/
+frontend/out/
+frontend/build/
+.next/
+out/
+
+# Turbo
+.turbo/
+
+# Next.js cache
+frontend/.swc/
+.swc/
+
+# Vercel
+.vercel/
+
+# TypeScript build info
+*.tsbuildinfo
+frontend/next-env.d.ts
+
+
+# =============================================================================
+# DOCKER & INFRASTRUCTURE
+# =============================================================================
+
+# Local Docker volumes (MinIO data, Postgres data)
+docker/volumes/
+minio_data/
+postgres_data/
+redis_data/
+
+# Docker override (local machine-specific config)
+docker-compose.override.yml
+
+
+# =============================================================================
+# LOGS
+# =============================================================================
+*.log
+*.log.*
+logs/
+backend/logs/
+frontend/logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# =============================================================================
+# OS-GENERATED
+# =============================================================================
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+
+
+# =============================================================================
+# IDE & EDITOR
+# =============================================================================
+
+# VS Code
+.vscode/
+*.code-workspace
+!.vscode/extensions.json   # allow shared recommended extensions
+
+# JetBrains (PyCharm, WebStorm, etc.)
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Vim / Neovim
+*.swp
+*.swo
+*~
+Session.vim
+.netrwhist
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+
+# =============================================================================
+# UPLOADS & MEDIA (stored in MinIO, not git)
+# =============================================================================
+backend/uploads/
+backend/media/
+frontend/public/uploads/
+
+
+# =============================================================================
+# MISCELLANEOUS
+# =============================================================================
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Task runner artifacts (used during Antigravity sessions)
+task.md
+
+# Rope (Python refactoring)
+.ropeproject/
+
+# SageMath
+*.sage.py
+
+# Sphinx documentation
+docs/_build/
+docs/api/
+
+# mkdocs
+/site
