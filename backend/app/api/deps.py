@@ -67,6 +67,49 @@ async def get_current_active_user(
     return current_user
 
 
+oauth2_scheme_optional = OAuth2PasswordBearer(
+    tokenUrl=f"{settings.API_V1_STR}/auth/login",
+    auto_error=False,
+)
+
+
+async def get_optional_current_user(
+    db: AsyncSession = Depends(get_db),
+    token: Any = Depends(oauth2_scheme_optional),
+) -> User:
+    """Validate token if present; fallback to default guest citizen user if unauthenticated."""
+    if token and isinstance(token, str):
+        try:
+            payload = decode_access_token(token)
+            if payload and payload.get("sub"):
+                user_id = int(payload.get("sub"))
+                user = await user_repo.get_by_id(db, user_id=user_id)
+                if user and user.is_active:
+                    return user
+        except Exception:
+            pass
+
+    default_user = await user_repo.get_by_id(db, user_id=1)
+    if not default_user:
+        from sqlalchemy import select
+        result = await db.execute(select(User).limit(1))
+        default_user = result.scalars().first()
+    if not default_user:
+        from app.core.security import get_password_hash
+        default_user = User(
+            email="citizen@civicfix.gov",
+            hashed_password=get_password_hash("citizen123"),
+            full_name="Guest Citizen",
+            role=UserRole.CITIZEN,
+            is_active=True,
+        )
+        db.add(default_user)
+        await db.commit()
+        await db.refresh(default_user)
+    return default_user
+
+
+
 def require_roles(*allowed_roles: UserRole) -> Callable[..., Any]:
     """Role-based Access Control (RBAC) dependency factory."""
 

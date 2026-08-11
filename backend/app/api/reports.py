@@ -1,9 +1,9 @@
-"""Report API Router."""
-
+import uuid
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Form, File, UploadFile, Body, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.api.deps import get_db, get_current_active_user, require_roles
+from app.api.deps import get_db, get_current_active_user, get_optional_current_user, require_roles
+from app.core.storage import get_storage_provider
 from app.models.user import User, UserRole
 from app.models.report import ReportCategory, ReportStatus, PriorityLevel
 from app.schemas.report import (
@@ -18,11 +18,53 @@ router = APIRouter(prefix="/reports", tags=["Reports"])
 
 @router.post("/", response_model=ReportResponse, status_code=status.HTTP_201_CREATED)
 async def create_report(
-    report_in: ReportCreate,
+    title: Optional[str] = Form(None),
+    category: Optional[str] = Form(None),
+    description: Optional[str] = Form(None),
+    latitude: Optional[float] = Form(None),
+    longitude: Optional[float] = Form(None),
+    address: Optional[str] = Form(""),
+    neighborhood: Optional[str] = Form(""),
+    priority: Optional[str] = Form(None),
+    image: Optional[UploadFile] = File(None),
+    report_in: Optional[ReportCreate] = Body(None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(get_optional_current_user),
 ) -> ReportResponse:
-    """Submit a new citizen infrastructure report."""
+    """Submit a new citizen infrastructure report, supporting JSON & Form/File uploads."""
+    if report_in is None:
+        if not title or latitude is None or longitude is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Missing required fields: title, latitude, longitude"
+            )
+
+        image_urls = []
+        if image:
+            try:
+                storage = get_storage_provider()
+                file_bytes = await image.read()
+                filename = f"reports/{uuid.uuid4()}_{image.filename}"
+                file_url = await storage.upload_file(
+                    file_bytes=file_bytes,
+                    destination_filename=filename,
+                    content_type=image.content_type or "image/jpeg"
+                )
+                image_urls.append(file_url)
+            except Exception:
+                image_urls.append("/placeholder_report.jpg")
+
+        report_in = ReportCreate(
+            title=title,
+            category=category or "OTHER",
+            description=description or f"Report for {title}",
+            latitude=latitude,
+            longitude=longitude,
+            address=address or "",
+            neighborhood=neighborhood or "",
+            image_urls=image_urls,
+        )
+
     report = await report_service.submit_report(
         db=db, report_in=report_in, user_id=current_user.id
     )
