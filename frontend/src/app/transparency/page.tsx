@@ -20,17 +20,20 @@ export default function TransparencyPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchTransparency = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await apiClient.get('/transparency/summary');
+      setData(res.data);
+    } catch (err: any) {
+      setError('Unable to load transparency data. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchTransparency = async () => {
-      try {
-        const res = await apiClient.get('/transparency/summary');
-        setData(res.data);
-      } catch (err: any) {
-        setError('Unable to load transparency data. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchTransparency();
   }, []);
 
@@ -62,14 +65,22 @@ export default function TransparencyPage() {
           <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
         </div>
       ) : error ? (
-        <div className="max-w-3xl mx-auto flex items-center gap-3 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-400">
-          <AlertCircle className="w-5 h-5 flex-shrink-0" />
-          <span>{error}</span>
+        <div className="max-w-3xl mx-auto flex items-center justify-between p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <span>{error}</span>
+          </div>
+          <button 
+            onClick={fetchTransparency} 
+            className="px-3 py-1.5 text-xs font-semibold bg-rose-500/20 hover:bg-rose-500/30 rounded-lg transition-colors"
+          >
+            Try Again
+          </button>
         </div>
       ) : (
         <div className="max-w-6xl mx-auto space-y-12">
           {/* KPI Row */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="glass-panel p-5 rounded-2xl border border-slate-800 text-center">
               <div className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">Total Reports</div>
               <div className="text-2xl font-black text-white">{data?.total_reports || 0}</div>

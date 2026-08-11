@@ -7,14 +7,17 @@ import { apiClient } from '@/lib/api';
 export default function CrewsPage() {
   const [crews, setCrews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchCrews = async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await apiClient.get('/crews/');
       setCrews(res.data || []);
     } catch (err) {
       console.error(err);
+      setError('Unable to fetch crews from the server.');
     } finally {
       setLoading(false);
     }
@@ -36,10 +39,26 @@ export default function CrewsPage() {
         </button>
       </div>
 
+      {/* Error state */}
+      {error && (
+        <div className="flex items-center justify-between p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+            <span>{error}</span>
+          </div>
+          <button 
+            onClick={fetchCrews} 
+            className="px-3 py-1.5 text-xs font-semibold bg-rose-500/20 hover:bg-rose-500/30 rounded-lg transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {crews.map(crew => (
             <div key={crew.id} className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-4">

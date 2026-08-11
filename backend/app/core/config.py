@@ -1,7 +1,7 @@
 """Application Configuration Settings."""
 
 import os
-from typing import List
+from typing import List, Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -35,6 +35,8 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: List[str] = ["*"]
 
     # AI / Triage defaults
+    GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY")
+    RESEND_API_KEY: Optional[str] = os.getenv("RESEND_API_KEY")
     AI_DUPLICATE_DISTANCE_METERS: float = 100.0
     AI_DUPLICATE_TIME_DAYS: int = 14
     AI_DUPLICATE_THRESHOLD: float = 0.70

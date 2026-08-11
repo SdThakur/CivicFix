@@ -116,53 +116,40 @@ class MockVisionAnalyzer(VisionAnalyzer):
 class GeminiVisionAnalyzer(VisionAnalyzer):
     """Google Gemini AI implementation for civic infrastructure vision analysis."""
 
-    def __init__(self, api_key: Optional[str] = None, model_name: str = "gemini-1.5-flash"):
-        self.api_key = api_key or os.getenv("GEMINI_API_KEY")
+    def __init__(self, api_key: Optional[str] = None, model_name: str = "gemini-2.5-flash"):
+        from app.core.config import settings
+        self.api_key = api_key or getattr(settings, "GEMINI_API_KEY", None) or os.getenv("GEMINI_API_KEY")
         self.model_name = model_name
         self.mock_fallback = MockVisionAnalyzer()
-        self._genai_client = None
-
-        if self.api_key:
-            try:
-                import google.generativeai as genai
-                genai.configure(api_key=self.api_key)
-                self._genai_client = genai.GenerativeModel(self.model_name)
-                logger.info("Successfully initialized Gemini Vision Analyzer with model: %s", self.model_name)
-            except Exception as e:
-                logger.warning("Failed to initialize Google Generative AI client: %s. Using Mock analyzer.", e)
-                self._genai_client = None
-        else:
-            logger.info("No GEMINI_API_KEY provided. GeminiVisionAnalyzer will fall back to MockVisionAnalyzer.")
 
     async def analyze_image(
         self, image_data: Union[bytes, str], prompt_context: Optional[str] = None
     ) -> VisionAnalysisResult:
-        """Analyze image using Gemini Vision API with automatic mock fallback on error."""
-        if not self._genai_client:
+        """Analyze image using Gemini 2.5 REST API with automatic mock fallback on error."""
+        if not self.api_key:
             return await self.mock_fallback.analyze_image(image_data, prompt_context)
 
         try:
-            # Prepare image payload for Gemini
-            image_parts = []
+            # Prepare base64 image data
+            mime_type = "image/jpeg"
             if isinstance(image_data, bytes):
-                image_parts.append({"mime_type": "image/jpeg", "data": image_data})
+                raw_bytes = image_data
             elif isinstance(image_data, str) and image_data.startswith("data:image"):
-                # Handle base64 data URI
                 header, encoded = image_data.split(",", 1)
                 mime_type = header.split(";")[0].split(":")[1]
                 raw_bytes = base64.b64decode(encoded)
-                image_parts.append({"mime_type": mime_type, "data": raw_bytes})
             elif isinstance(image_data, str) and os.path.exists(image_data):
                 with open(image_data, "rb") as f:
-                    image_parts.append({"mime_type": "image/jpeg", "data": f.read()})
+                    raw_bytes = f.read()
             else:
                 raw_bytes = base64.b64decode(image_data) if isinstance(image_data, str) else image_data
-                image_parts.append({"mime_type": "image/jpeg", "data": raw_bytes})
+
+            b64_str = base64.b64encode(raw_bytes).decode("utf-8")
 
             system_prompt = (
                 "You are an expert civic infrastructure inspection AI for municipal public works. "
                 "Analyze the provided image of reported urban infrastructure damage or issue. "
-                "Respond ONLY with a valid JSON object matching this schema:\n"
+                "Respond ONLY with a valid JSON object matching this exact schema:\n"
                 "{\n"
                 '  "category": "<Pothole|Water Leak|Streetlight Failure|Illegal Dumping|Damaged Traffic Sign|Traffic Signal Fault|Fallen Tree Branch|Sidewalk Crack|Other>",\n'
                 '  "severity_score": <float 0.0 to 10.0>,\n'
@@ -178,26 +165,63 @@ class GeminiVisionAnalyzer(VisionAnalyzer):
             if prompt_context:
                 system_prompt += f"\nCitizen report context: {prompt_context}"
 
-            # Run in thread pool to avoid blocking async event loop
-            loop = asyncio.get_running_loop()
-            response = await loop.run_in_executor(
-                None,
-                lambda: self._genai_client.generate_content([system_prompt] + image_parts)
-            )
+            payload = {
+                "contents": [
+                    {
+                        "parts": [
+                            {"text": system_prompt},
+                            {
+                                "inline_data": {
+                                    "mime_type": mime_type,
+                                    "data": b64_str,
+                                }
+                            },
+                        ]
+                    }
+                ]
+            }
 
-            response_text = response.text.strip()
-            # Clean possible markdown block delimiters ```json ... ```
-            if response_text.startswith("```"):
-                lines = response_text.splitlines()
-                if lines[0].startswith("```"):
-                    lines = lines[1:]
-                if lines and lines[-1].startswith("```"):
-                    lines = lines[:-1]
-                response_text = "\n".join(lines).strip()
+            # REST call to Google Generative Language API
+            import urllib.request
 
-            parsed = json.loads(response_text)
-            parsed["raw_response"] = {"model": self.model_name, "raw_text": response.text}
-            return VisionAnalysisResult(**parsed)
+            models_to_try = [self.model_name, "gemini-flash-latest", "gemini-2.0-flash"]
+            last_err = None
+
+            for m in models_to_try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={self.api_key}"
+                req = urllib.request.Request(
+                    url,
+                    data=json.dumps(payload).encode("utf-8"),
+                    headers={"Content-Type": "application/json"},
+                )
+
+                try:
+                    def _call_api():
+                        with urllib.request.urlopen(req, timeout=15) as resp:
+                            return json.loads(resp.read().decode("utf-8"))
+
+                    data = await asyncio.to_thread(_call_api)
+                    raw_text = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+
+                    # Clean markdown code blocks ```json ... ```
+                    if raw_text.startswith("```"):
+                        lines = raw_text.splitlines()
+                        if lines[0].startswith("```"):
+                            lines = lines[1:]
+                        if lines and lines[-1].startswith("```"):
+                            lines = lines[:-1]
+                        raw_text = "\n".join(lines).strip()
+
+                    parsed = json.loads(raw_text)
+                    parsed["raw_response"] = {"model": m, "raw_text": raw_text}
+                    return VisionAnalysisResult(**parsed)
+
+                except Exception as err:
+                    last_err = err
+                    logger.warning("Gemini REST model %s failed: %s", m, err)
+                    continue
+
+            raise last_err or RuntimeError("All Gemini Vision models failed")
 
         except Exception as err:
             logger.error("Gemini Vision API call failed: %s. Falling back to Mock analyzer.", err)
@@ -206,7 +230,8 @@ class GeminiVisionAnalyzer(VisionAnalyzer):
 
 def get_vision_analyzer(api_key: Optional[str] = None) -> VisionAnalyzer:
     """Factory function returning GeminiVisionAnalyzer if API key available, else MockVisionAnalyzer."""
-    effective_key = api_key or os.getenv("GEMINI_API_KEY")
+    from app.core.config import settings
+    effective_key = api_key or getattr(settings, "GEMINI_API_KEY", None) or os.getenv("GEMINI_API_KEY")
     if effective_key:
         return GeminiVisionAnalyzer(api_key=effective_key)
     return MockVisionAnalyzer()

@@ -8,8 +8,10 @@ from app.schemas.ai_assistant import (
     AITriageResponse,
     AIChatRequest,
     AIChatResponse,
+    AITriageImageResponse
 )
 from app.repositories.report_repo import report_repo
+from app.ai.vision import get_vision_analyzer
 
 # Keyword matching table for smart classification fallback / local NLP heuristic
 KEYWORD_CATEGORY_MAP = {
@@ -121,6 +123,108 @@ class AIAssistantService:
             reply=reply,
             suggested_actions=actions,
             related_resources=resources,
+        )
+
+    async def triage_image(
+        self, image_bytes: bytes, notes: Optional[str] = None
+    ) -> AITriageImageResponse:
+        """Triage an uploaded image using Gemini Vision."""
+        analyzer = get_vision_analyzer()
+        try:
+            result = await analyzer.analyze_image(image_bytes, prompt_context=notes)
+            # If the analyzer fell back to mock due to missing/invalid API key, return ai_available=False
+            if result.raw_response and result.raw_response.get("mock"):
+                return AITriageImageResponse(
+                    ai_available=False,
+                    suggested_category="OTHER",
+                    confidence_score=0.0,
+                    suggested_priority="LOW",
+                    priority_score=0,
+                    urgency_reasoning="",
+                    detected_objects=[],
+                    suggested_department_code="GCS",
+                    recommended_action="",
+                    sla_info="",
+                    error_message="AI Vision analysis unavailable: The GEMINI_API_KEY in .env is invalid or expired. Please update it with a valid key from aistudio.google.com."
+                )
+        except Exception as e:
+            return AITriageImageResponse(
+                ai_available=False,
+                suggested_category="OTHER",
+                confidence_score=0.0,
+                suggested_priority="LOW",
+                priority_score=0,
+                urgency_reasoning="",
+                detected_objects=[],
+                suggested_department_code="GCS",
+                recommended_action="",
+                sla_info="",
+                error_message="AI Vision analysis unavailable. Please review the information manually."
+            )
+
+        # map category to standard ReportCategory
+        mapped_cat = ReportCategory.OTHER
+        result_cat_lower = result.category.lower()
+        if "pothole" in result_cat_lower:
+            mapped_cat = ReportCategory.POTHOLE
+        elif "water" in result_cat_lower or "leak" in result_cat_lower:
+            mapped_cat = ReportCategory.WATER_LEAK
+        elif "streetlight" in result_cat_lower or "light" in result_cat_lower:
+            mapped_cat = ReportCategory.STREETLIGHT
+        elif "traffic signal" in result_cat_lower or "light" in result_cat_lower:
+            mapped_cat = ReportCategory.TRAFFIC_SIGNAL
+        elif "dumping" in result_cat_lower or "trash" in result_cat_lower:
+            mapped_cat = ReportCategory.TRASH
+        elif "tree" in result_cat_lower or "branch" in result_cat_lower or "park" in result_cat_lower:
+            mapped_cat = ReportCategory.PARK_DAMAGE
+        elif "graffiti" in result_cat_lower:
+            mapped_cat = ReportCategory.GRAFFITI
+
+        dept_map = {
+            ReportCategory.POTHOLE: "DPW",
+            ReportCategory.WATER_LEAK: "DWS",
+            ReportCategory.STREETLIGHT: "DPW",
+            ReportCategory.TRAFFIC_SIGNAL: "DPW",
+            ReportCategory.TRASH: "DSW",
+            ReportCategory.GRAFFITI: "DPR",
+            ReportCategory.PARK_DAMAGE: "DPR",
+            ReportCategory.OTHER: "DPW",
+        }
+        dept_code = dept_map.get(mapped_cat, "DPW")
+
+        priority_score = int(result.severity_score * 10)
+        if result.safety_hazard:
+            priority_score = min(100, priority_score + 20)
+
+        if priority_score >= 80:
+            suggested_prio = PriorityLevel.URGENT
+        elif priority_score >= 60:
+            suggested_prio = PriorityLevel.HIGH
+        elif priority_score >= 40:
+            suggested_prio = PriorityLevel.MEDIUM
+        else:
+            suggested_prio = PriorityLevel.LOW
+
+        sla_map = {
+            PriorityLevel.URGENT: "2-4 hours",
+            PriorityLevel.HIGH: "24 hours",
+            PriorityLevel.MEDIUM: "3 days",
+            PriorityLevel.LOW: "7-14 days",
+        }
+        sla_info = f"Expected response time: {sla_map.get(suggested_prio, 'Unknown')}"
+
+        return AITriageImageResponse(
+            ai_available=True,
+            suggested_category=mapped_cat.value,
+            confidence_score=result.confidence,
+            suggested_priority=suggested_prio.value,
+            priority_score=priority_score,
+            urgency_reasoning=result.description,
+            detected_objects=result.tags,
+            suggested_department_code=dept_code,
+            recommended_action=f"Route to {dept_code} immediately.",
+            sla_info=sla_info,
+            error_message=None,
         )
 
 

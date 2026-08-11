@@ -3,7 +3,7 @@
 import math
 from typing import Any, Dict, List
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, text, cast, Float
+from sqlalchemy import select, func, text, cast, Float, or_
 
 from app.models.report import Report
 from app.models.work_order import WorkOrder
@@ -145,8 +145,22 @@ class SpatialQueryService:
 
     @staticmethod
     async def get_issues_in_maintenance_zone(db: AsyncSession, zone_id: int) -> List[Issue]:
-        # Placeholder: assume Issue has a zone_id or spatial query checks polygon
-        stmt = select(Issue).limit(10)
+        from app.models.asset import MaintenanceZone
+        
+        zone = await db.get(MaintenanceZone, zone_id)
+        if not zone:
+            return []
+            
+        stmt = select(Issue)
+        filters = []
+        if zone.department_id:
+            filters.append(Issue.department_id == zone.department_id)
+        if zone.jurisdiction_id:
+            filters.append(Issue.jurisdiction_id == zone.jurisdiction_id)
+            
+        if filters:
+            stmt = stmt.where(or_(*filters))
+            
         return list((await db.execute(stmt)).scalars().all())
 
     @staticmethod

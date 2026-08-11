@@ -4,9 +4,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.db.session import engine
+from app.db.session import engine, async_session_maker
 from app.db.base import Base
 import app.models  # Load models for metadata registration
+from app.services.sla_service import SLAService
 from app.api import (
     auth,
     reports,
@@ -39,6 +40,8 @@ async def lifespan(app: FastAPI):
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+        async with async_session_maker() as session:
+            await SLAService.seed_default_rules(session)
     except Exception as e:
         print(f"[CivicFix Startup Warning] Could not auto-create tables: {e}")
     yield

@@ -34,6 +34,41 @@ async def create_crew(
     crew = await CrewService.create_crew(db, crew_in)
     return CrewRead.model_validate(crew)
 
+@router.get("/available", response_model=List[CrewRead])
+async def list_available_crews(
+    lat: float,
+    lng: float,
+    radius_km: float = 10.0,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_roles([UserRole.STAFF, UserRole.MANAGER, UserRole.ADMIN]))
+) -> List[CrewRead]:
+    """List available crews near location."""
+    crews = await CrewService.list_available_crews(db, lat, lng, radius_km)
+    return [CrewRead.model_validate(c) for c in crews]
+
+@router.get("/skills", response_model=List[SkillRead])
+async def list_skills(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_roles([UserRole.STAFF, UserRole.MANAGER, UserRole.ADMIN]))
+) -> List[SkillRead]:
+    """List all skills."""
+    result = await db.execute(select(Skill))
+    skills = list(result.scalars().all())
+    return [SkillRead.model_validate(s) for s in skills]
+
+@router.post("/skills", response_model=SkillRead, status_code=status.HTTP_201_CREATED)
+async def create_skill(
+    skill_in: dict,  # Simplification
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_roles([UserRole.ADMIN]))
+) -> SkillRead:
+    """Create skill."""
+    skill = Skill(**skill_in)
+    db.add(skill)
+    await db.commit()
+    await db.refresh(skill)
+    return SkillRead.model_validate(skill)
+
 @router.get("/{crew_id}", response_model=CrewRead)
 async def get_crew(
     crew_id: int,
@@ -92,37 +127,3 @@ async def get_crew_workload(
     """Get crew workload."""
     return await CrewService.get_crew_workload(db, crew_id)
 
-@router.get("/available", response_model=List[CrewRead])
-async def list_available_crews(
-    lat: float,
-    lng: float,
-    radius_km: float = 10.0,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_roles([UserRole.STAFF, UserRole.MANAGER, UserRole.ADMIN]))
-) -> List[CrewRead]:
-    """List available crews near location."""
-    crews = await CrewService.list_available_crews(db, lat, lng, radius_km)
-    return [CrewRead.model_validate(c) for c in crews]
-
-@router.get("/skills", response_model=List[SkillRead])
-async def list_skills(
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_roles([UserRole.STAFF, UserRole.MANAGER, UserRole.ADMIN]))
-) -> List[SkillRead]:
-    """List all skills."""
-    result = await db.execute(select(Skill))
-    skills = list(result.scalars().all())
-    return [SkillRead.model_validate(s) for s in skills]
-
-@router.post("/skills", response_model=SkillRead, status_code=status.HTTP_201_CREATED)
-async def create_skill(
-    skill_in: dict,  # Simplification
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_roles([UserRole.ADMIN]))
-) -> SkillRead:
-    """Create skill."""
-    skill = Skill(**skill_in)
-    db.add(skill)
-    await db.commit()
-    await db.refresh(skill)
-    return SkillRead.model_validate(skill)

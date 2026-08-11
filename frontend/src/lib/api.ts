@@ -184,6 +184,32 @@ export const workOrderApi = {
     });
     return res.data;
   },
+  uploadBeforePhoto: async (id: string | number, file: File) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const res = await apiClient.post(`/work-orders/${id}/before-photo`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
+  uploadAfterPhoto: async (id: string | number, file: File) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const res = await apiClient.post(`/work-orders/${id}/after-photo`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
+  reportBlocked: async (id: string | number, reason: string, notes?: string, file?: File) => {
+    const formData = new FormData();
+    formData.append('reason', reason);
+    if (notes) formData.append('notes', notes);
+    if (file) formData.append('image', file);
+    const res = await apiClient.post(`/work-orders/${id}/report-blocked`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
 };
 
 // --- Analytics APIs ---
@@ -218,6 +244,15 @@ export const assistantApi = {
     longitude: number;
   }) => {
     const res = await apiClient.post('/ai-assistant/triage', data);
+    return res.data;
+  },
+  triageImage: async (file: File, notes?: string) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    if (notes) formData.append('notes', notes);
+    const res = await apiClient.post('/ai-assistant/triage-image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
     return res.data;
   },
 };

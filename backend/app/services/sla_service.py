@@ -6,6 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_
 from app.models.sla import SLARule, SLAEscalationLog
 from app.models.report import Report, ReportStatus
+from app.models.service_request import ServiceRequest, ServiceRequestStatus
+from app.services.notification_service import notification_service
 
 class SLAService:
     @staticmethod
@@ -58,15 +60,38 @@ class SLAService:
         }
 
     @staticmethod
-    def compute_sla_status(sr: Any) -> str:
-        # sr is assumed to have `created_at`, `status`
-        # In a real impl we'd look up the rule and compare times.
-        # This is a simplified version just returning healthy by default.
-        if hasattr(sr, "status") and sr.status in (ReportStatus.RESOLVED, ReportStatus.REJECTED, ReportStatus.DUPLICATE):
+    def compute_sla_status(sr_or_report: Any, created_at: datetime.datetime, status: str) -> str:
+        # Check if already resolved
+        resolved_statuses = ["RESOLVED", "CLOSED", "REJECTED", "DUPLICATE"]
+        if hasattr(status, "value"):
+            status_val = status.value
+        else:
+            status_val = status
+
+        if status_val in resolved_statuses:
+            return "SLA_HEALTHY"
+
+        now = datetime.datetime.now(datetime.timezone.utc)
+        
+        # Determine due dates
+        due_date = None
+        if hasattr(sr_or_report, "sla_resolution_due_at") and sr_or_report.sla_resolution_due_at:
+            due_date = sr_or_report.sla_resolution_due_at
+        elif hasattr(sr_or_report, "sla_response_due_at") and sr_or_report.sla_response_due_at:
+            due_date = sr_or_report.sla_response_due_at
+
+        if not due_date:
             return "SLA_HEALTHY"
             
-        now = datetime.datetime.now(datetime.timezone.utc)
-        # Mock logic, usually relies on `calculate_deadlines` and rule.
+        if now > due_date:
+            return "BREACHED"
+            
+        # calculate approach threshold (e.g. within 2 hours of due date or 80% of total duration)
+        # simplistic approach: if less than 2 hours left
+        time_left = due_date - now
+        if time_left.total_seconds() < 7200: # 2 hours
+            return "APPROACHING_BREACH"
+            
         return "SLA_HEALTHY"
 
     @staticmethod
@@ -96,5 +121,58 @@ class SLAService:
 
     @staticmethod
     async def check_and_escalate(db: AsyncSession) -> List[SLAEscalationLog]:
-        # Mock logic
-        return []
+        logs_created = []
+        
+        # Query active ServiceRequests
+        query = select(ServiceRequest).where(
+            ServiceRequest.status.notin_([
+                ServiceRequestStatus.RESOLVED,
+                ServiceRequestStatus.CLOSED,
+                ServiceRequestStatus.REJECTED
+            ])
+        )
+        result = await db.execute(query)
+        srs = result.scalars().all()
+        
+        for sr in srs:
+            old_status = sr.sla_status
+            new_status = SLAService.compute_sla_status(sr, sr.created_at, sr.status)
+            
+            if old_status != new_status:
+                sr.sla_status = new_status
+                
+            if new_status in ("APPROACHING_BREACH", "BREACHED"):
+                escalation_type = f"SLA_{new_status}"
+                
+                # Check if log already exists
+                log_check = await db.execute(
+                    select(SLAEscalationLog).where(
+                        and_(
+                            SLAEscalationLog.service_request_id == sr.id,
+                            SLAEscalationLog.escalation_type == escalation_type
+                        )
+                    )
+                )
+                if not log_check.scalars().first():
+                    # Create log
+                    msg = f"Service Request {sr.sr_number} is {new_status}."
+                    log = SLAEscalationLog(
+                        service_request_id=sr.id,
+                        escalation_type=escalation_type,
+                        message=msg
+                    )
+                    db.add(log)
+                    logs_created.append(log)
+                    
+                    # Notify
+                    await notification_service.send_notification(
+                        db=db,
+                        user_id=1, # Default admin or manager
+                        title=f"SLA Alert: {sr.sr_number}",
+                        message=msg
+                    )
+                    
+        if logs_created:
+            await db.commit()
+            
+        return logs_created

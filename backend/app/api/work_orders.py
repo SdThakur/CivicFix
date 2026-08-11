@@ -10,8 +10,16 @@ from app.schemas.work_order import (
     WorkOrderCreate,
     WorkOrderUpdate,
     WorkOrderResponse,
+    WorkOrderReportBlocked
 )
 from app.services.work_order_service import work_order_service
+from fastapi import UploadFile, File, Form
+from app.models.work_order import WorkOrder
+from sqlalchemy import select
+from app.services.notification_service import notification_service
+from datetime import datetime, timezone
+import os
+import shutil
 
 router = APIRouter(prefix="/work-orders", tags=["Work Orders"])
 
@@ -93,3 +101,89 @@ async def update_work_order_status(
         db=db, work_order_id=work_order_id, new_status=status_val
     )
     return WorkOrderResponse.model_validate(wo)
+
+
+@router.post("/{work_order_id}/before-photo", response_model=WorkOrderResponse)
+async def upload_before_photo(
+    work_order_id: int,
+    image: Optional[UploadFile] = File(None),
+    image_url: Optional[str] = Form(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Upload before photo for work order."""
+    wo = await work_order_service.get_work_order(db=db, work_order_id=work_order_id)
+    if not wo:
+        raise HTTPException(status_code=404, detail="Work order not found")
+        
+    if image:
+        os.makedirs("uploads", exist_ok=True)
+        file_path = f"uploads/before_{wo.id}_{image.filename}"
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(image.file, buffer)
+        wo.before_photo_url = f"/{file_path}"
+    elif image_url:
+        wo.before_photo_url = image_url
+        
+    await db.commit()
+    await db.refresh(wo)
+    return WorkOrderResponse.model_validate(wo)
+
+
+@router.post("/{work_order_id}/after-photo", response_model=WorkOrderResponse)
+async def upload_after_photo(
+    work_order_id: int,
+    image: Optional[UploadFile] = File(None),
+    image_url: Optional[str] = Form(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Upload after photo for work order."""
+    wo = await work_order_service.get_work_order(db=db, work_order_id=work_order_id)
+    if not wo:
+        raise HTTPException(status_code=404, detail="Work order not found")
+        
+    if image:
+        os.makedirs("uploads", exist_ok=True)
+        file_path = f"uploads/after_{wo.id}_{image.filename}"
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(image.file, buffer)
+        wo.after_photo_url = f"/{file_path}"
+    elif image_url:
+        wo.after_photo_url = image_url
+        
+    await db.commit()
+    await db.refresh(wo)
+    return WorkOrderResponse.model_validate(wo)
+
+
+@router.post("/{work_order_id}/report-blocked", response_model=WorkOrderResponse)
+async def report_blocked(
+    work_order_id: int,
+    body: WorkOrderReportBlocked,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Report a work order as blocked."""
+    wo = await work_order_service.get_work_order(db=db, work_order_id=work_order_id)
+    if not wo:
+        raise HTTPException(status_code=404, detail="Work order not found")
+        
+    wo.status = WorkOrderStatus.BLOCKED
+    wo.blocked_reason = body.reason
+    wo.blocked_notes = body.notes
+    
+    # Notify department manager
+    # Here assuming user_id 1 is a default manager or we would look it up by department
+    manager_id = 1
+    await notification_service.send_notification(
+        db=db,
+        user_id=manager_id,
+        title=f"Work Order Blocked: {wo.work_order_number}",
+        message=f"Work order blocked due to: {body.reason}",
+    )
+    
+    await db.commit()
+    await db.refresh(wo)
+    return WorkOrderResponse.model_validate(wo)
+

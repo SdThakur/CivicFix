@@ -11,7 +11,7 @@ from app.models.work_order import WorkOrderStatus
 class WorkOrderBase(BaseModel):
     """Base Work Order schema."""
 
-    issue_id: Union[int, uuid.UUID]
+    issue_id: Optional[Union[int, uuid.UUID]] = None
     title: str = Field(..., min_length=3, max_length=255)
     description: str
     priority: PriorityLevel = PriorityLevel.MEDIUM
@@ -45,6 +45,10 @@ class WorkOrderUpdate(BaseModel):
     estimated_hours: Optional[float] = None
     actual_hours: Optional[float] = None
     notes: Optional[str] = None
+    before_photo_url: Optional[str] = None
+    after_photo_url: Optional[str] = None
+    blocked_reason: Optional[str] = None
+    blocked_notes: Optional[str] = None
 
 
 class WorkOrderResponse(WorkOrderBase):
@@ -56,7 +60,18 @@ class WorkOrderResponse(WorkOrderBase):
     actual_start: Optional[datetime] = None
     actual_end: Optional[datetime] = None
     actual_hours: Optional[float] = 0.0
+    before_photo_url: Optional[str] = None
+    after_photo_url: Optional[str] = None
+    blocked_reason: Optional[str] = None
+    blocked_notes: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class WorkOrderReportBlocked(BaseModel):
+    """Schema for reporting a blocked work order."""
+    reason: str
+    notes: Optional[str] = None
+    photo_url: Optional[str] = None

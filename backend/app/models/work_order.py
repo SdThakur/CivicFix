@@ -31,6 +31,7 @@ class WorkOrderStatus(str, enum.Enum):
     IN_PROGRESS = "IN_PROGRESS"
     COMPLETED = "COMPLETED"
     CANCELLED = "CANCELLED"
+    BLOCKED = "BLOCKED"
 
 
 WorkOrderPriority = PriorityLevel
@@ -45,8 +46,8 @@ class WorkOrder(Base):
     work_order_number: Mapped[str] = mapped_column(
         String(50), unique=True, nullable=False, index=True
     )
-    issue_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("issues.id", ondelete="CASCADE"), nullable=False, index=True
+    issue_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("issues.id", ondelete="SET NULL"), nullable=True, index=True
     )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
@@ -83,6 +84,11 @@ class WorkOrder(Base):
     estimated_hours: Mapped[Optional[float]] = mapped_column(Float, default=0.0, nullable=True)
     actual_hours: Mapped[Optional[float]] = mapped_column(Float, default=0.0, nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    
+    before_photo_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    after_photo_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    blocked_reason: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    blocked_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

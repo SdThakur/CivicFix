@@ -190,7 +190,7 @@ class AssignmentService:
         if not work_order:
             raise ValueError("Work order not found")
         
-        work_order.assigned_to_crew_id = crew_id
+        work_order.crew_id = crew_id
         work_order.status = WorkOrderStatus.ASSIGNED
         # Note: audit logging would be added here
         

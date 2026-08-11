@@ -56,14 +56,10 @@ export default function ReportWizardPage() {
     reasoning: string;
     priorityScore: number;
     departmentCode: string;
-  }>({
-    category: 'General Infrastructure',
-    confidence: 0.85,
-    severity: 'MEDIUM',
-    reasoning: 'Infrastructure anomaly identified for municipal triage.',
-    priorityScore: 65,
-    departmentCode: 'DPW',
-  });
+    slaHours: number;
+    tags: string[];
+    available: boolean;
+  } | null>(null);
 
   const [location, setLocation] = useState<{
     lat: number;
@@ -159,46 +155,42 @@ export default function ReportWizardPage() {
       const baseName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
       const candidateTitle = baseName.length > 3 ? baseName : 'Damaged Infrastructure Incident';
 
-      // Call live backend AI triage endpoint
+      // Call real AI image triage endpoint
       let triageData: any = null;
       try {
-        triageData = await assistantApi.triage({
-          title: candidateTitle,
-          description: `Citizen photo submission from ${location.address}`,
-          latitude: location.lat,
-          longitude: location.lng,
-        });
+        triageData = await assistantApi.triageImage(file, `Citizen photo submission from ${location.address}`);
       } catch (err) {
-        console.warn('Backend triage fallback used', err);
+        console.warn('Backend triage failed', err);
       }
 
-      const detectedCat = triageData?.suggested_category || 'Pothole';
-      const detectedSeverity = triageData?.suggested_priority || 'HIGH';
-      const detectedConfidence = triageData?.confidence_score || 0.88;
-      const detectedReasoning =
-        triageData?.urgency_reasoning ||
-        `Automated vision model identified ${detectedCat} requiring municipal attention.`;
-      const detectedDept = triageData?.suggested_department_code || 'DPW';
-      const calculatedScore =
-        detectedSeverity === 'URGENT' || detectedSeverity === 'CRITICAL'
-          ? 92
-          : detectedSeverity === 'HIGH'
-          ? 78
-          : detectedSeverity === 'MEDIUM'
-          ? 55
-          : 35;
-
-      setAiResult({
-        category: detectedCat,
-        confidence: detectedConfidence,
-        severity: detectedSeverity,
-        reasoning: detectedReasoning,
-        priorityScore: calculatedScore,
-        departmentCode: detectedDept,
-      });
-
-      setTitle(`${detectedCat} near ${location.address.split(',')[0] || 'Current Location'}`);
-      setDescription(detectedReasoning);
+      if (triageData && triageData.ai_available !== false) {
+        setAiResult({
+          category: triageData.suggested_category || 'General',
+          confidence: triageData.confidence_score || 0,
+          severity: triageData.suggested_priority || 'MEDIUM',
+          reasoning: triageData.urgency_reasoning || 'Automated vision model identified issue.',
+          priorityScore: triageData.priority_score || 50,
+          departmentCode: triageData.suggested_department_code || 'N/A',
+          slaHours: triageData.sla_hours || 48,
+          tags: triageData.detected_tags || [],
+          available: true,
+        });
+        setTitle(`${triageData.suggested_category || 'Issue'} near ${location.address.split(',')[0] || 'Current Location'}`);
+        setDescription(triageData.urgency_reasoning || '');
+      } else {
+        setAiResult({
+          available: false,
+          category: 'General',
+          confidence: 0,
+          severity: 'MEDIUM',
+          reasoning: '',
+          priorityScore: 50,
+          departmentCode: 'N/A',
+          slaHours: 48,
+          tags: [],
+        });
+        setTitle(`Issue near ${location.address.split(',')[0] || 'Current Location'}`);
+      }
 
       // Step 2: Location extraction
       await new Promise((r) => setTimeout(r, 400));
@@ -281,10 +273,10 @@ export default function ReportWizardPage() {
     setErrorMessage(null);
     try {
       await reportApi.create({
-        title: title || `${aiResult.category} Incident`,
-        description: description || aiResult.reasoning,
-        category: aiResult.category.toLowerCase(),
-        priority: aiResult.severity,
+        title: title || `${aiResult?.category || 'General'} Incident`,
+        description: description || aiResult?.reasoning || '',
+        category: aiResult?.category?.toLowerCase() || 'general',
+        priority: aiResult?.severity || 'MEDIUM',
         latitude: location.lat,
         longitude: location.lng,
         address: location.address,
@@ -479,8 +471,14 @@ export default function ReportWizardPage() {
       )}
 
       {/* Step 4: Final Review & Priority Breakdown */}
-      {step === 'review' && (
+      {step === 'review' && aiResult && (
         <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6">
+          {!aiResult.available && (
+            <div className="flex items-center gap-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-sm mb-6">
+              <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+              <span>AI analysis unavailable. Please review the information manually.</span>
+            </div>
+          )}
           <h2 className="text-xl font-bold text-white border-b border-slate-800 pb-4">
             AI Classification & Issue Summary
           </h2>
@@ -490,14 +488,25 @@ export default function ReportWizardPage() {
             <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-blue-400 uppercase tracking-wider">AI Classification</span>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-medium">
-                  Confidence: {(aiResult.confidence * 100).toFixed(0)}%
-                </span>
+                {aiResult.available && (
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-medium">
+                    Confidence: {(aiResult.confidence * 100).toFixed(0)}%
+                  </span>
+                )}
               </div>
 
               <div>
                 <h3 className="text-2xl font-black text-white">{aiResult.category}</h3>
                 <p className="text-xs text-slate-400 mt-1">{aiResult.reasoning}</p>
+                {aiResult.tags && aiResult.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {aiResult.tags.map(t => (
+                      <span key={t} className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] uppercase">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-300 flex items-center gap-2">
@@ -532,8 +541,8 @@ export default function ReportWizardPage() {
                   <span className="font-semibold text-blue-400">{aiResult.severity}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Department SLA:</span>
-                  <span className="font-semibold text-emerald-400">24-48 Hours</span>
+                  <span>Estimated SLA:</span>
+                  <span className="font-semibold text-emerald-400">{aiResult.slaHours} Hours</span>
                 </div>
               </div>
             </div>

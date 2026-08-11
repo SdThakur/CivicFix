@@ -64,6 +64,32 @@ async def create_equipment(
     await db.refresh(eq)
     return EquipmentRead.model_validate(eq)
 
+@router.post("/assignments", response_model=EquipmentAssignmentRead, status_code=status.HTTP_201_CREATED)
+async def create_assignment(
+    assign_in: EquipmentAssignmentCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_roles([UserRole.MANAGER, UserRole.ADMIN]))
+) -> EquipmentAssignmentRead:
+    """Assign equipment."""
+    assignment = EquipmentAssignment(**assign_in.model_dump())
+    assignment.assigned_by_id = current_user.id
+    db.add(assignment)
+    await db.commit()
+    await db.refresh(assignment)
+    return EquipmentAssignmentRead.model_validate(assignment)
+
+@router.get("/work-order/{work_order_id}", response_model=List[EquipmentAssignmentRead])
+async def list_assignments_for_wo(
+    work_order_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_roles([UserRole.STAFF, UserRole.MANAGER, UserRole.ADMIN]))
+) -> List[EquipmentAssignmentRead]:
+    """List assignments for work order."""
+    result = await db.execute(select(EquipmentAssignment).where(EquipmentAssignment.work_order_id == work_order_id))
+    assignments = list(result.scalars().all())
+    return [EquipmentAssignmentRead.model_validate(a) for a in assignments]
+
+
 @router.get("/{equipment_id}", response_model=EquipmentRead)
 async def get_equipment(
     equipment_id: int,
@@ -98,27 +124,4 @@ async def update_equipment(
     await db.refresh(eq)
     return EquipmentRead.model_validate(eq)
 
-@router.post("/assignments", response_model=EquipmentAssignmentRead, status_code=status.HTTP_201_CREATED)
-async def create_assignment(
-    assign_in: EquipmentAssignmentCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_roles([UserRole.MANAGER, UserRole.ADMIN]))
-) -> EquipmentAssignmentRead:
-    """Assign equipment."""
-    assignment = EquipmentAssignment(**assign_in.model_dump())
-    assignment.assigned_by_id = current_user.id
-    db.add(assignment)
-    await db.commit()
-    await db.refresh(assignment)
-    return EquipmentAssignmentRead.model_validate(assignment)
-
-@router.get("/work-order/{work_order_id}", response_model=List[EquipmentAssignmentRead])
-async def list_assignments_for_wo(
-    work_order_id: int,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_roles([UserRole.STAFF, UserRole.MANAGER, UserRole.ADMIN]))
-) -> List[EquipmentAssignmentRead]:
-    """List assignments for work order."""
-    result = await db.execute(select(EquipmentAssignment).where(EquipmentAssignment.work_order_id == work_order_id))
-    assignments = list(result.scalars().all())
-    return [EquipmentAssignmentRead.model_validate(a) for a in assignments]
+    return EquipmentRead.model_validate(eq)

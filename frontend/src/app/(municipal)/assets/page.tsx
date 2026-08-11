@@ -24,22 +24,26 @@ const CONDITION_COLORS: Record<string, string> = {
 export default function AssetsPage() {
   const [assets, setAssets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState('ALL');
 
+  const fetchAssets = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await apiClient.get('/assets/infrastructure', {
+        params: filter !== 'ALL' ? { asset_type: filter } : {}
+      });
+      setAssets(res.data || []);
+    } catch (err) {
+      console.error(err);
+      setError('Failed to fetch assets.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchAssets = async () => {
-      setLoading(true);
-      try {
-        const res = await apiClient.get('/assets/infrastructure', {
-          params: filter !== 'ALL' ? { asset_type: filter } : {}
-        });
-        setAssets(res.data || []);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchAssets();
   }, [filter]);
 
@@ -55,7 +59,23 @@ export default function AssetsPage() {
         </button>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+      {/* Error state */}
+      {error && (
+        <div className="flex items-center justify-between p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm">
+          <div className="flex items-center gap-3">
+            <span className="flex-shrink-0">⚠️</span>
+            <span>{error}</span>
+          </div>
+          <button 
+            onClick={fetchAssets} 
+            className="px-3 py-1.5 text-xs font-semibold bg-rose-500/20 hover:bg-rose-500/30 rounded-lg transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      )}
+
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar flex-nowrap">
         {['ALL', 'ROAD', 'TRAFFIC_SIGNAL', 'STREETLIGHT', 'SIGN', 'BRIDGE'].map(type => (
           <button
             key={type}

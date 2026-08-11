@@ -1,6 +1,6 @@
 """AI Assistant API Router."""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db
 from app.schemas.ai_assistant import (
@@ -8,6 +8,7 @@ from app.schemas.ai_assistant import (
     AITriageResponse,
     AIChatRequest,
     AIChatResponse,
+    AITriageImageResponse
 )
 from app.services.ai_assistant_service import ai_assistant_service
 
@@ -21,6 +22,16 @@ async def triage_report(
 ) -> AITriageResponse:
     """Analyze report details to determine category, priority, and department routing recommendation."""
     return await ai_assistant_service.triage(db=db, request=request)
+
+
+@router.post("/triage-image", response_model=AITriageImageResponse)
+async def triage_image(
+    image: UploadFile = File(...),
+    notes: str | None = Form(None),
+) -> AITriageImageResponse:
+    """Analyze image using Gemini Vision to extract triage info."""
+    image_bytes = await image.read()
+    return await ai_assistant_service.triage_image(image_bytes=image_bytes, notes=notes)
 
 
 @router.post("/chat", response_model=AIChatResponse)

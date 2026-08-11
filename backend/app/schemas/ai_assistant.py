@@ -39,3 +39,19 @@ class AIChatResponse(BaseModel):
     reply: str
     suggested_actions: List[str]
     related_resources: List[str]
+
+
+class AITriageImageResponse(BaseModel):
+    """AI triage recommendation from an image."""
+    ai_available: bool
+    suggested_category: str
+    confidence_score: float
+    suggested_priority: str
+    priority_score: int
+    urgency_reasoning: str
+    detected_objects: List[str]
+    suggested_department_code: str
+    recommended_action: str
+    sla_info: str
+    error_message: Optional[str]
+

@@ -146,6 +146,7 @@ class RiskScoringService:
 
     @staticmethod
     async def score_all_segments(db: AsyncSession) -> List[Dict[str, Any]]:
+        await RiskScoringService.recalculate_segment_incident_counts(db)
         stmt = select(RoadSegment)
         segments = (await db.execute(stmt)).scalars().all()
         
@@ -165,3 +166,34 @@ class RiskScoringService:
     async def get_high_risk_assets(db: AsyncSession, threshold: float = 70.0, limit: int = 20) -> List[InfrastructureAsset]:
         stmt = select(InfrastructureAsset).where(InfrastructureAsset.risk_score >= threshold).order_by(InfrastructureAsset.risk_score.desc()).limit(limit)
         return list((await db.execute(stmt)).scalars().all())
+
+    @staticmethod
+    async def recalculate_segment_incident_counts(db: AsyncSession) -> None:
+        import math
+        ninety_days_ago = datetime.now(timezone.utc) - timedelta(days=90)
+        
+        stmt_reports = select(Report).where(Report.created_at >= ninety_days_ago)
+        reports = (await db.execute(stmt_reports)).scalars().all()
+        
+        stmt_segs = select(RoadSegment)
+        segments = (await db.execute(stmt_segs)).scalars().all()
+        
+        for seg in segments:
+            if seg.start_lat and seg.start_lng:
+                lat, lng = seg.start_lat, seg.start_lng
+            else:
+                continue
+                
+            count = 0
+            for r in reports:
+                if r.latitude and r.longitude:
+                    dLat = math.radians(r.latitude - lat)
+                    dLon = math.radians(r.longitude - lng)
+                    a = math.sin(dLat / 2)**2 + math.cos(math.radians(lat)) * math.cos(math.radians(r.latitude)) * math.sin(dLon / 2)**2
+                    dist = 6371.0 * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+                    if dist <= 0.5:
+                        count += 1
+                        
+            seg.incident_count_90d = count
+        
+        await db.commit()

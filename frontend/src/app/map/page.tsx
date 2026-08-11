@@ -89,12 +89,12 @@ export default function PublicMapPage() {
       </div>
 
       {/* Category Filter Pills */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
         {CATEGORY_FILTERS.map((cat) => (
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
+            className={`py-2.5 px-4 text-sm font-medium rounded-xl transition-colors whitespace-nowrap ${
               selectedCategory === cat
                 ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
                 : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
@@ -103,12 +103,12 @@ export default function PublicMapPage() {
             {cat}
           </button>
         ))}
-        <div className="h-5 w-px bg-slate-800 mx-1" />
+        <div className="h-6 w-px bg-slate-800 mx-1 flex-shrink-0" />
         {STATUS_FILTERS.slice(0, 4).map((s) => (
           <button
             key={s}
             onClick={() => setSelectedStatus(s)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
+            className={`py-2.5 px-4 text-sm font-medium rounded-xl transition-colors whitespace-nowrap ${
               selectedStatus === s
                 ? 'bg-slate-700 text-white border border-slate-600'
                 : 'text-slate-400 hover:text-slate-300'
@@ -121,16 +121,24 @@ export default function PublicMapPage() {
 
       {/* Error Banner */}
       {error && (
-        <div className="flex items-center gap-3 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm">
-          <AlertCircle className="w-5 h-5 flex-shrink-0" />
-          <span>{error}</span>
+        <div className="flex items-center justify-between p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <span>{error}</span>
+          </div>
+          <button 
+            onClick={fetchIssues} 
+            className="px-3 py-1.5 text-xs font-semibold bg-rose-500/20 hover:bg-rose-500/30 rounded-lg transition-colors"
+          >
+            Try Again
+          </button>
         </div>
       )}
 
       {/* Main Layout: Map + Sidebar */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[600px]">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-4rem)] min-h-[450px] md:h-[650px]">
         {/* Map Panel (2 cols) */}
-        <div className="lg:col-span-2 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-900/60">
+        <div className="lg:col-span-2 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-900/60 flex flex-col relative h-full">
           {loading ? (
             <div className="w-full h-full flex items-center justify-center">
               <div className="flex flex-col items-center gap-3 text-slate-400">

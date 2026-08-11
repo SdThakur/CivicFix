@@ -108,12 +108,12 @@ class PreventiveMaintenanceService:
         
         # Create a linked WorkOrder
         wo = WorkOrder(
+            work_order_number=f"WO-PM-{rec.id:06d}",
             title=f"PM: {rec.title}",
             description=rec.reasoning,
             priority=WorkOrderPriority.HIGH if rec.priority == "HIGH" else WorkOrderPriority.MEDIUM,
-            status=WorkOrderStatus.OPEN,
-            asset_id=rec.asset_id,
-            road_segment_id=rec.road_segment_id
+            status=WorkOrderStatus.PENDING,
+            issue_id=getattr(rec, 'issue_id', None),
         )
         db.add(wo)
         await db.flush()
