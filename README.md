@@ -65,8 +65,8 @@
 - **Interactive Leaflet Map**: Drag markers to adjust GPS locations with Nominatim reverse geocoding.
 - **Resolution Verification Loop**: Citizens receive notification when repairs are completed and confirm if fixed.
 
-### 2. Computer Vision Pipeline (Gemini Vision)
-- Abstracted `VisionAnalyzer` class supporting `GeminiVisionAnalyzer` (`gemini-1.5-flash`).
+### 2. Computer Vision Pipeline (Gemini 2.5 Vision)
+- Abstracted `VisionAnalyzer` class supporting `GeminiVisionAnalyzer` (`gemini-2.5-flash`).
 - Returns structured JSON: category, confidence, damage score, detected objects, and human review recommendation.
 
 ### 3. 4-Factor Duplicate Detection Algorithm
@@ -82,8 +82,10 @@ $$\text{Duplicate Score} = (0.45 \times \text{Location Similarity}) + (0.35 \tim
 ### 4. Transparent Multi-Factor Priority Scoring (0 - 100)
 $$\text{Priority Score} = \text{Visual Damage} (30\%) + \text{Location Risk} (20\%) + \text{Infra Criticality} (20\%) + \text{Community Escalation} (15\%) + \text{Traffic Importance} (15\%)$$
 
-### 5. Municipal Operations Portal
-- **Work Order Management**: Accept, start, add repair notes, and upload before/after photos.
+### 5. Municipal Operations & 311 Service Request Center
+- **311 Service Request Center**: Dispatch, track, and manage citizen requests with interactive 3-dot action menus, status logs, and SLA breach escalations.
+- **Physical Inspection Scheduling**: Schedule inspector site visits (`+ Schedule Inspection`) and complete findings with safety risk ratings & area measurements.
+- **Work Order Management**: Accept, start, add repair notes, upload before/after photos, and mark blocked dispatches.
 - **Analytics & Spatial Hotspots**: Interactive Recharts graphs, DBSCAN spatial clustering, and predictive district risk scores.
 - **AI Staff Assistant**: Natural language database querying with Gemini function calling.
 
@@ -92,10 +94,10 @@ $$\text{Priority Score} = \text{Visual Damage} (30\%) + \text{Location Risk} (20
 ## Technology Stack
 
 - **Frontend**: Next.js 14 (App Router), React 18, TypeScript, Tailwind CSS, Leaflet, Recharts, Lucide Icons.
-- **Backend**: Python 3.11, FastAPI, Pydantic v2, SQLAlchemy 2.0 (async), GeoAlchemy2, PostGIS.
-- **AI & ML**: Google Gemini Vision API, `sentence-transformers` CLIP, `scikit-learn` DBSCAN.
+- **Backend**: Python 3.11/3.14, FastAPI, Pydantic v2, SQLAlchemy 2.0 (async), GeoAlchemy2, PostGIS.
+- **AI & ML**: Google Gemini 2.5 Flash Vision API, `sentence-transformers` CLIP, `scikit-learn` DBSCAN.
 - **Background Worker**: Celery, Redis, Resend API for notification emails.
-- **Storage**: MinIO / AWS S3 compatible storage.
+- **Storage**: MinIO / AWS S3 compatible storage with local fallback.
 
 ---
 
@@ -103,8 +105,8 @@ $$\text{Priority Score} = \text{Visual Damage} (30\%) + \text{Location Risk} (20
 
 ```bash
 # 1. Clone repository & enter workspace
-git clone https://github.com/your-org/civicfix.git
-cd civicfix
+git clone https://github.com/SdThakur/CivicFix.git
+cd CivicFix
 
 # 2. Configure environment variables
 cp backend/.env.example backend/.env
