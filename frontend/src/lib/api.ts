@@ -274,3 +274,22 @@ export const notificationApi = {
     return res.data;
   },
 };
+
+// --- Service Request APIs ---
+export const serviceRequestApi = {
+  list: async () => {
+    const res = await apiClient.get('/service-requests/');
+    return res.data;
+  },
+  createFromIssue: async (issueId: number, reportedById?: number) => {
+    const res = await apiClient.post('/service-requests/', {
+      issue_id: issueId,
+      reported_by_id: reportedById ?? null,
+    });
+    return res.data;
+  },
+  updateStatus: async (srId: number, status: string, notes?: string) => {
+    const res = await apiClient.post(`/service-requests/${srId}/status`, { status, notes });
+    return res.data;
+  },
+};

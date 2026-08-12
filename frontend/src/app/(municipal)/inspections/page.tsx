@@ -23,7 +23,15 @@ export default function InspectionsPage() {
   const [selectedInspection, setSelectedInspection] = useState<any | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Form state
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+  const [scheduleData, setScheduleData] = useState({
+    issue_id: '',
+    service_request_id: '',
+    scheduled_at: '',
+    notes: '',
+  });
+
+  // Form state for completing inspection
   const [formData, setFormData] = useState({
     confirmed_severity: 'LOW',
     safety_risk: 'LOW',
@@ -72,6 +80,27 @@ export default function InspectionsPage() {
     }
   };
 
+  const handleScheduleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      await apiClient.post('/inspections/', {
+        issue_id: scheduleData.issue_id ? parseInt(scheduleData.issue_id) : undefined,
+        service_request_id: scheduleData.service_request_id ? parseInt(scheduleData.service_request_id) : undefined,
+        scheduled_at: scheduleData.scheduled_at ? new Date(scheduleData.scheduled_at).toISOString() : new Date().toISOString(),
+        inspection_notes: scheduleData.notes,
+      });
+      setIsScheduleOpen(false);
+      setScheduleData({ issue_id: '', service_request_id: '', scheduled_at: '', notes: '' });
+      fetchInspections();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to schedule inspection. Please ensure issue or service request ID is valid.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch(status) {
       case 'SCHEDULED': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
@@ -88,7 +117,10 @@ export default function InspectionsPage() {
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Infrastructure Inspections</h1>
           <p className="text-slate-400 text-sm mt-1">Manage physical verification of reported issues</p>
         </div>
-        <button className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition-colors flex items-center gap-2 text-sm">
+        <button 
+          onClick={() => setIsScheduleOpen(true)}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold transition-colors flex items-center gap-2 text-sm shadow-lg shadow-blue-600/20"
+        >
           <ClipboardCheck className="w-4 h-4" /> + Schedule Inspection
         </button>
       </div>
@@ -156,7 +188,7 @@ export default function InspectionsPage() {
                         </span>
                       </td>
                       <td className="p-4 text-slate-400">
-                        {ins.scheduled_date ? new Date(ins.scheduled_date).toLocaleDateString() : 'N/A'}
+                        {ins.scheduled_at ? new Date(ins.scheduled_at).toLocaleDateString() : 'N/A'}
                       </td>
                       <td className="p-4 text-right">
                         <button 
@@ -197,7 +229,7 @@ export default function InspectionsPage() {
                     <div className="flex flex-col gap-1">
                       <span className="text-slate-500 font-medium">Scheduled</span>
                       <span className="text-slate-300">
-                        {ins.scheduled_date ? new Date(ins.scheduled_date).toLocaleDateString() : 'N/A'}
+                        {ins.scheduled_at ? new Date(ins.scheduled_at).toLocaleDateString() : 'N/A'}
                       </span>
                     </div>
                   </div>
@@ -218,7 +250,7 @@ export default function InspectionsPage() {
         )}
       </div>
 
-      {/* Detail Modal */}
+      {/* Complete Inspection Detail Modal */}
       {selectedInspection && (
         <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/80 backdrop-blur-sm">
           <div className="w-full md:max-w-2xl bg-slate-900 border-l border-slate-800 h-full overflow-y-auto p-6 shadow-2xl animate-in slide-in-from-right">
@@ -231,7 +263,6 @@ export default function InspectionsPage() {
 
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row gap-4">
-                {/* AI Recommendation */}
                 <div className="flex-1 p-4 rounded-xl bg-blue-900/10 border border-blue-500/20 space-y-2">
                   <div className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1">
                     <AlertTriangle className="w-3.5 h-3.5" /> AI Recommendation
@@ -244,7 +275,6 @@ export default function InspectionsPage() {
                 </div>
               </div>
 
-              {/* Form */}
               <form onSubmit={handleComplete} className="space-y-4">
                 <div className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-800 pb-2">
                   Inspector's Official Finding
@@ -368,6 +398,90 @@ export default function InspectionsPage() {
                 </div>
               </form>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Inspection Modal */}
+      {isScheduleOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6 animate-in zoom-in-95">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ClipboardCheck className="w-5 h-5 text-blue-400" />
+                <h2 className="text-xl font-bold text-white">Schedule New Inspection</h2>
+              </div>
+              <button 
+                onClick={() => setIsScheduleOpen(false)}
+                className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleScheduleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">Issue ID</label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 1"
+                    value={scheduleData.issue_id}
+                    onChange={(e) => setScheduleData({ ...scheduleData, issue_id: e.target.value })}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">Service Request ID</label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 1"
+                    value={scheduleData.service_request_id}
+                    onChange={(e) => setScheduleData({ ...scheduleData, service_request_id: e.target.value })}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Scheduled Date & Time</label>
+                <input
+                  type="datetime-local"
+                  value={scheduleData.scheduled_at}
+                  onChange={(e) => setScheduleData({ ...scheduleData, scheduled_at: e.target.value })}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Dispatch / Inspector Notes</label>
+                <textarea
+                  rows={3}
+                  placeholder="Notes for field inspector..."
+                  value={scheduleData.notes}
+                  onChange={(e) => setScheduleData({ ...scheduleData, notes: e.target.value })}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm resize-none focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsScheduleOpen(false)}
+                  className="px-4 py-2 text-sm font-semibold text-slate-400 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-xl transition-colors flex items-center gap-2"
+                >
+                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardCheck className="w-4 h-4" />}
+                  Create Schedule
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

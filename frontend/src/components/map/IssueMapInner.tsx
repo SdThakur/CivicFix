@@ -209,10 +209,12 @@ function GeolocationButton({
   setUserPos,
   locating,
   setLocating,
+  setLocError,
 }: {
   setUserPos: (pos: { lat: number; lng: number; accuracy: number } | null) => void;
   locating: boolean;
   setLocating: (val: boolean) => void;
+  setLocError?: (err: string | null) => void;
 }) {
   const map = useMap();
 

@@ -38,7 +38,7 @@ class ServiceRequestService:
         # Calculate SLA based on priority
         response_hours = 0
         resolution_hours = 0
-        if issue.priority == IssuePriority.CRITICAL:
+        if issue.priority == IssuePriority.URGENT or str(issue.priority).upper() == "CRITICAL":
             response_hours = 2
             resolution_hours = 24
         elif issue.priority == IssuePriority.HIGH:
@@ -80,6 +80,7 @@ class ServiceRequestService:
         )
         db.add(history)
         await db.commit()
+        await db.refresh(sr)
         
         return sr
 

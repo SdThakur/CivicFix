@@ -1,6 +1,6 @@
 import uuid
-from typing import List, Optional
-from fastapi import APIRouter, Depends, Query, Form, File, UploadFile, Body, HTTPException, status
+from typing import Any, List, Optional
+from fastapi import APIRouter, Depends, Query, Form, File, UploadFile, Body, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db, get_current_active_user, get_optional_current_user, require_roles
 from app.core.storage import get_storage_provider
@@ -18,6 +18,7 @@ router = APIRouter(prefix="/reports", tags=["Reports"])
 
 @router.post("/", response_model=ReportResponse, status_code=status.HTTP_201_CREATED)
 async def create_report(
+    request: Request,
     title: Optional[str] = Form(None),
     category: Optional[str] = Form(None),
     description: Optional[str] = Form(None),
@@ -27,12 +28,15 @@ async def create_report(
     neighborhood: Optional[str] = Form(""),
     priority: Optional[str] = Form(None),
     image: Optional[UploadFile] = File(None),
-    report_in: Optional[ReportCreate] = Body(None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_optional_current_user),
 ) -> ReportResponse:
     """Submit a new citizen infrastructure report, supporting JSON & Form/File uploads."""
-    if report_in is None:
+    content_type = request.headers.get("content-type", "")
+    if "application/json" in content_type:
+        json_data = await request.json()
+        report_in = ReportCreate(**json_data)
+    else:
         if not title or latitude is None or longitude is None:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

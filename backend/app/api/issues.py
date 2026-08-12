@@ -1,7 +1,7 @@
 """Issue API Router."""
 
-from typing import List, Optional
-from fastapi import APIRouter, Depends, Query, status
+from typing import Any, List, Optional
+from fastapi import APIRouter, Depends, Query, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db, get_current_active_user, require_roles
 from app.models.user import User, UserRole
@@ -9,13 +9,14 @@ from app.models.issue import IssueStatus
 from app.models.report import ReportCategory, PriorityLevel
 from app.schemas.issue import IssueCreate, IssueUpdate, IssueResponse
 from app.services.issue_service import issue_service
+from app.repositories.report_repo import report_repo
 
 router = APIRouter(prefix="/issues", tags=["Issues"])
 
 
 @router.post("/", response_model=IssueResponse, status_code=status.HTTP_201_CREATED)
 async def create_issue(
-    issue_in: IssueCreate,
+    issue_in: Optional[IssueCreate] = None,
     initial_report_id: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(
@@ -23,6 +24,29 @@ async def create_issue(
     ),
 ) -> IssueResponse:
     """Create a new aggregated Issue (Staff/Manager/Admin)."""
+    if issue_in is None:
+        if not initial_report_id:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Either issue request body or initial_report_id query parameter is required."
+            )
+        report = await report_repo.get_by_id(db, initial_report_id)
+        if not report:
+            raise HTTPException(
+                status_code=status.HTTP_444_NOT_FOUND if hasattr(status, 'HTTP_444_NOT_FOUND') else 404,
+                detail=f"Report with id {initial_report_id} not found."
+            )
+        issue_in = IssueCreate(
+            title=report.title,
+            category=report.category,
+            description=report.description,
+            priority=report.priority,
+            latitude=report.latitude,
+            longitude=report.longitude,
+            address=report.address or "",
+            neighborhood=report.neighborhood or "",
+        )
+
     issue = await issue_service.create_issue(
         db=db, issue_in=issue_in, initial_report_id=initial_report_id
     )

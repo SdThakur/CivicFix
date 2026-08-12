@@ -96,7 +96,7 @@ class ServiceRequest(Base):
     assigned_to: Mapped[Optional["User"]] = relationship("User", foreign_keys=[assigned_to_id])
     department: Mapped[Optional["Department"]] = relationship("Department")
     status_history: Mapped[List["ServiceRequestStatusHistory"]] = relationship(
-        "ServiceRequestStatusHistory", back_populates="service_request", cascade="all, delete-orphan"
+        "ServiceRequestStatusHistory", back_populates="service_request", cascade="all, delete-orphan", lazy="selectin"
     )
     inspections: Mapped[List["Inspection"]] = relationship(
         "Inspection", back_populates="service_request"

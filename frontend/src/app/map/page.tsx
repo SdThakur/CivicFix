@@ -66,6 +66,8 @@ function MapPageContent() {
               severity: (r.priority as any) || 'MEDIUM',
               status: (r.status as any) || 'SUBMITTED',
               description: r.description || '',
+              priority_score: r.ai_score || 50.0,
+              location_id: r.id,
               report_count: 1,
               created_at: r.created_at,
               location: {
@@ -74,7 +76,7 @@ function MapPageContent() {
                 longitude: r.longitude,
                 address: r.address || `${r.latitude.toFixed(4)}, ${r.longitude.toFixed(4)}`,
               },
-            });
+            } as Issue);
           }
         });
       }

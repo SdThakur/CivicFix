@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -28,16 +28,49 @@ import {
   Bar 
 } from 'recharts';
 import Link from 'next/link';
-import { analyticsApi, reportApi } from '@/lib/api';
+import { useRouter } from 'next/navigation';
+import { analyticsApi, reportApi, issueApi, serviceRequestApi } from '@/lib/api';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
 
 export default function AdminAnalyticsPage() {
+  const router = useRouter();
   const [stats, setStats] = useState<any>(null);
   const [resolutionTimes, setResolutionTimes] = useState<any[]>([]);
   const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [triagingId, setTriagingId] = useState<number | null>(null);
+  const [triageError, setTriageError] = useState<string | null>(null);
+
+  const triageReport = useCallback(async (report: any) => {
+    setTriagingId(report.id);
+    setTriageError(null);
+    try {
+      // Step 1: Create an Issue from the report
+      const issue = await issueApi.create({
+        title: report.title,
+        description: report.description || `Triaged from report ${report.tracking_number || report.id}`,
+        category: report.category || 'OTHER',
+        latitude: report.latitude,
+        longitude: report.longitude,
+        address: report.address || '',
+        neighborhood: report.neighborhood || '',
+        priority: report.priority || 'MEDIUM',
+      }, report.id);
+
+      // Step 2: Create a ServiceRequest linked to the issue
+      await serviceRequestApi.createFromIssue(issue.id);
+
+      // Step 3: Navigate to the SR center
+      router.push('/service-requests');
+    } catch (err: any) {
+      const msg = err?.response?.data?.detail || 'Triage failed. Please try again.';
+      setTriageError(msg);
+    } finally {
+      setTriagingId(null);
+    }
+  }, [router]);
 
   const fetchAnalytics = async () => {
     setLoading(true);
@@ -305,6 +338,15 @@ export default function AdminAnalyticsPage() {
           </Link>
         </div>
 
+        {/* Triage error banner */}
+        {triageError && (
+          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center gap-2 text-rose-400 text-xs">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span>{triageError}</span>
+            <button onClick={() => setTriageError(null)} className="ml-auto hover:text-rose-300">✕</button>
+          </div>
+        )}
+
         {loading ? (
           <div className="p-8 flex items-center justify-center text-slate-500">
             <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
@@ -360,12 +402,17 @@ export default function AdminAnalyticsPage() {
                       </span>
                     </td>
                     <td className="py-3 px-3 text-right">
-                      <Link
-                        href="/service-requests"
-                        className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white font-semibold transition-colors text-[11px]"
+                      <button
+                        onClick={() => triageReport(r)}
+                        disabled={triagingId === r.id}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white font-semibold transition-colors text-[11px] disabled:opacity-60 disabled:cursor-not-allowed"
                       >
-                        Triage Ticket
-                      </Link>
+                        {triagingId === r.id ? (
+                          <><Loader2 className="w-3 h-3 animate-spin" /> Triaging...</>
+                        ) : (
+                          'Triage Ticket'
+                        )}
+                      </button>
                     </td>
                   </tr>
                 ))}
