@@ -134,4 +134,4 @@ pytest -v --cov=app
 
 ## License
 
-MIT License. Designed for municipal governments and civic technology standardizations.
+MIT License. Copyright (c) 2026 Satya Thakur. Designed for municipal governments and civic technology standardizations.
