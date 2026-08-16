@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
-from app.db.base import Base
+from app.models import Base
 from app.db.session import get_db as session_get_db
 from app.api.deps import get_db as deps_get_db
 from app.core.security import get_password_hash, create_access_token

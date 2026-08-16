@@ -14,7 +14,11 @@ import {
   MapPin,
   RefreshCw,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Radio,
+  ShieldCheck,
+  Activity,
+  ArrowUpRight
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -31,7 +35,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { analyticsApi, reportApi, issueApi, serviceRequestApi } from '@/lib/api';
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
+const COLORS = ['#00f2ff', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#3b82f6'];
 
 export default function AdminAnalyticsPage() {
   const router = useRouter();
@@ -85,7 +89,7 @@ export default function AdminAnalyticsPage() {
       setResolutionTimes(Array.isArray(resData) ? resData : []);
       setReports(Array.isArray(reportsData) ? reportsData : []);
     } catch (err: any) {
-      setError('Unable to load analytics data. Ensure the backend server is online.');
+      setError('Unable to load analytics telemetry. Ensure the backend server is online.');
     } finally {
       setLoading(false);
     }
@@ -108,102 +112,120 @@ export default function AdminAnalyticsPage() {
   }));
 
   return (
-    <div className="space-y-8 py-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div className="space-y-8 py-4">
+      {/* Top Bar Header */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2">
-            <BarChart3 className="w-3.5 h-3.5" /> Municipal Infrastructure Analytics & Machine Intelligence
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-xs font-mono font-bold uppercase tracking-wider mb-2 border border-cyan-500/20">
+            <Radio className="w-3.5 h-3.5 text-cyan-400 animate-pulse" /> Municipal Infrastructure Analytics & Machine Intelligence
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">City Command Center</h1>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight font-display-lg">City Command Center</h1>
           <p className="text-slate-400 text-sm mt-1">Live aggregated reporting telemetry, category distribution, and department SLAs</p>
         </div>
 
-        <button
-          onClick={fetchAnalytics}
-          disabled={loading}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-blue-500 transition-colors disabled:opacity-50 text-xs font-semibold"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh Metrics
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:flex px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
+            <span className="font-mono text-xs font-bold text-emerald-400 uppercase">Telemetry: Active</span>
+          </div>
+          <button
+            onClick={fetchAnalytics}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 border border-white/10 text-slate-300 hover:text-white hover:border-cyan-500/50 transition-all disabled:opacity-50 text-xs font-mono font-medium"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-cyan-400 ${loading ? 'animate-spin' : ''}`} />
+            <span>SYNC METRICS</span>
+          </button>
+        </div>
       </div>
 
       {/* Error Banner */}
       {error && (
-        <div className="flex items-center justify-between p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm">
+        <div className="flex items-center justify-between p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm font-mono shadow-[0_0_20px_rgba(244,63,94,0.15)]">
           <div className="flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0" />
             <span>{error}</span>
           </div>
           <button 
             onClick={fetchAnalytics} 
-            className="px-3 py-1.5 text-xs font-semibold bg-rose-500/20 hover:bg-rose-500/30 rounded-lg transition-colors"
+            className="px-3 py-1.5 text-xs font-bold bg-rose-500/20 hover:bg-rose-500/30 rounded-lg transition-colors border border-rose-500/30"
           >
-            Try Again
+            Retry Connection
           </button>
         </div>
       )}
 
-      {/* Top Metrics Grid */}
+      {/* Top Telemetry KPI Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="glass-panel p-5 rounded-2xl border border-slate-800">
-          <div className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">
-            Total Reports
+        {/* KPI 1 */}
+        <div className="glass-card p-5 rounded-2xl border border-white/10 hover:border-cyan-500/30 transition-all group">
+          <div className="flex justify-between items-start mb-2">
+            <span className="text-slate-400 text-xs font-mono font-medium uppercase tracking-wider">Total Reports</span>
+            <Activity className="w-4 h-4 text-cyan-400" />
           </div>
-          <div className="text-3xl font-black text-white">
+          <div className="text-3xl font-mono font-extrabold text-white">
             {loading ? '...' : stats?.total_reports ?? 0}
           </div>
-          <div className="text-[11px] text-blue-400 mt-1 font-medium">All logged incidents</div>
+          <div className="text-[11px] font-mono text-cyan-400 mt-2 flex items-center gap-1">
+            <TrendingUp className="w-3 h-3" /> All logged incidents stream
+          </div>
         </div>
 
-        <div className="glass-panel p-5 rounded-2xl border border-slate-800">
-          <div className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">
-            Active Issues
+        {/* KPI 2 */}
+        <div className="glass-card p-5 rounded-2xl border border-amber-500/20 hover:border-amber-500/40 transition-all group">
+          <div className="flex justify-between items-start mb-2">
+            <span className="text-slate-400 text-xs font-mono font-medium uppercase tracking-wider">Active Remediation</span>
+            <AlertTriangle className="w-4 h-4 text-amber-400" />
           </div>
-          <div className="text-3xl font-black text-amber-400">
+          <div className="text-3xl font-mono font-extrabold text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.3)]">
             {loading ? '...' : stats?.active_issues ?? 0}
           </div>
-          <div className="text-[11px] text-amber-500/70 mt-1 font-medium">Under active remediation</div>
+          <div className="text-[11px] font-mono text-amber-400/80 mt-2">Under active field remediation</div>
         </div>
 
-        <div className="glass-panel p-5 rounded-2xl border border-slate-800">
-          <div className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">
-            Pending Work Orders
+        {/* KPI 3 */}
+        <div className="glass-card p-5 rounded-2xl border border-rose-500/20 hover:border-rose-500/40 transition-all group">
+          <div className="flex justify-between items-start mb-2">
+            <span className="text-slate-400 text-xs font-mono font-medium uppercase tracking-wider">Pending Work Orders</span>
+            <Clock className="w-4 h-4 text-rose-400" />
           </div>
-          <div className="text-3xl font-black text-rose-400">
+          <div className="text-3xl font-mono font-extrabold text-rose-400 drop-shadow-[0_0_8px_rgba(244,63,94,0.3)]">
             {loading ? '...' : stats?.pending_work_orders ?? 0}
           </div>
-          <div className="text-[11px] text-rose-500/70 mt-1 font-medium">Field crew queue</div>
+          <div className="text-[11px] font-mono text-rose-400/80 mt-2">Field crew dispatch queue</div>
         </div>
 
-        <div className="glass-panel p-5 rounded-2xl border border-slate-800">
-          <div className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">
-            Avg Resolution SLA
+        {/* KPI 4 */}
+        <div className="glass-card p-5 rounded-2xl border border-emerald-500/20 hover:border-emerald-500/40 transition-all group">
+          <div className="flex justify-between items-start mb-2">
+            <span className="text-slate-400 text-xs font-mono font-medium uppercase tracking-wider">Avg Resolution SLA</span>
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           </div>
-          <div className="text-3xl font-black text-emerald-400">
+          <div className="text-3xl font-mono font-extrabold text-emerald-400">
             {loading ? '...' : `${stats?.avg_resolution_time_days ?? 2.4}d`}
           </div>
-          <div className="text-[11px] text-emerald-500/70 mt-1 font-medium">Mean turnaround time</div>
+          <div className="text-[11px] font-mono text-emerald-400/80 mt-2">Mean turnaround timeframe</div>
         </div>
       </div>
 
-      {/* Analytics Charts Grid */}
+      {/* Stitch Analytics Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Category Breakdown Pie Chart */}
-        <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <PieIcon className="w-5 h-5 text-blue-400" /> Infrastructure Category Distribution
+        <div className="glass-panel p-6 rounded-3xl border border-white/10 space-y-4 shadow-[0_0_20px_rgba(0,0,0,0.4)]">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <h3 className="text-base font-mono font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <PieIcon className="w-4 h-4 text-cyan-400" /> Infrastructure Category Telemetry
             </h3>
+            <span className="text-xs font-mono text-slate-400">{categoryChartData.length} Categories</span>
           </div>
 
           {loading ? (
-            <div className="h-64 flex items-center justify-center text-slate-500">
-              <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+            <div className="h-64 flex flex-col items-center justify-center gap-2 text-slate-500 font-mono text-xs">
+              <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
+              <span>Rendering Distribution...</span>
             </div>
           ) : categoryChartData.length === 0 ? (
-            <div className="h-64 flex items-center justify-center text-slate-500 text-sm">
+            <div className="h-64 flex items-center justify-center text-slate-500 font-mono text-xs">
               No category telemetry available.
             </div>
           ) : (
@@ -214,21 +236,24 @@ export default function AdminAnalyticsPage() {
                     data={categoryChartData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
+                    innerRadius={65}
+                    outerRadius={95}
                     paddingAngle={4}
                     dataKey="value"
                   >
                     {categoryChartData.map((entry: any, index: number) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
+                      <Cell key={`cell-${index}`} fill={entry.color} stroke="#070a12" strokeWidth={2} />
                     ))}
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#0f172a',
-                      borderColor: '#1e293b',
+                      backgroundColor: '#070a12',
+                      borderColor: 'rgba(255, 255, 255, 0.1)',
                       borderRadius: '12px',
                       color: '#fff',
+                      fontFamily: 'JetBrains Mono, monospace',
+                      fontSize: '12px',
+                      boxShadow: '0 0 20px rgba(0,0,0,0.8)'
                     }}
                   />
                 </PieChart>
@@ -236,44 +261,48 @@ export default function AdminAnalyticsPage() {
             </div>
           )}
 
-          <div className="flex flex-wrap gap-3 pt-2">
+          <div className="flex flex-wrap gap-3 pt-2 font-mono text-xs">
             {categoryChartData.map((cat: any) => (
-              <div key={cat.name} className="flex items-center gap-1.5 text-xs text-slate-300">
+              <div key={cat.name} className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-900/60 border border-white/5 text-slate-300">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
-                <span>{cat.name}: <strong>{cat.value}</strong></span>
+                <span>{cat.name}: <strong className="text-white">{cat.value}</strong></span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Resolution Time per Category Bar Chart */}
-        <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Clock className="w-5 h-5 text-emerald-400" /> Mean Resolution Time (Hours)
+        <div className="glass-panel p-6 rounded-3xl border border-white/10 space-y-4 shadow-[0_0_20px_rgba(0,0,0,0.4)]">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <h3 className="text-base font-mono font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <Clock className="w-4 h-4 text-emerald-400" /> Mean Resolution Time (Hours)
             </h3>
+            <span className="text-xs font-mono text-emerald-400">Target SLA</span>
           </div>
 
           {loading ? (
-            <div className="h-64 flex items-center justify-center text-slate-500">
-              <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
+            <div className="h-64 flex flex-col items-center justify-center gap-2 text-slate-500 font-mono text-xs">
+              <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
+              <span>Calculating SLA Averages...</span>
             </div>
           ) : resolutionChartData.length === 0 ? (
-            <div className="h-64 flex items-center justify-center text-slate-500 text-sm">
-              Resolution metrics will appear as work orders are closed.
+            <div className="h-64 flex items-center justify-center text-slate-500 font-mono text-xs">
+              Resolution metrics will populate as work orders close.
             </div>
           ) : (
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={resolutionChartData}>
-                  <XAxis dataKey="category" stroke="#64748b" fontSize={11} />
-                  <YAxis stroke="#64748b" fontSize={11} />
+                  <XAxis dataKey="category" stroke="#64748b" fontSize={11} fontFamily="JetBrains Mono, monospace" />
+                  <YAxis stroke="#64748b" fontSize={11} fontFamily="JetBrains Mono, monospace" />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#0f172a',
-                      borderColor: '#1e293b',
+                      backgroundColor: '#070a12',
+                      borderColor: 'rgba(255, 255, 255, 0.1)',
                       borderRadius: '12px',
                       color: '#fff',
+                      fontFamily: 'JetBrains Mono, monospace',
+                      fontSize: '12px',
                     }}
                   />
                   <Bar dataKey="hours" fill="#10b981" radius={[6, 6, 0, 0]} />
@@ -284,33 +313,37 @@ export default function AdminAnalyticsPage() {
         </div>
       </div>
 
-      {/* Top Neighborhood Hotspots */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
-        <h3 className="text-lg font-bold text-white flex items-center gap-2">
-          <Flame className="w-5 h-5 text-rose-400" /> High-Activity Neighborhood Clusters
-        </h3>
+      {/* Top Neighborhood Hotspots Cluster */}
+      <div className="glass-panel p-6 rounded-3xl border border-white/10 space-y-4 shadow-[0_0_20px_rgba(0,0,0,0.4)]">
+        <div className="flex items-center justify-between border-b border-white/10 pb-3">
+          <h3 className="text-base font-mono font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <Flame className="w-4 h-4 text-rose-400" /> High-Activity Neighborhood Clusters (DBSCAN Spatial Analysis)
+          </h3>
+        </div>
 
         {loading ? (
-          <div className="p-8 flex items-center justify-center text-slate-500">
-            <Loader2 className="w-6 h-6 animate-spin text-rose-500" />
+          <div className="p-8 flex items-center justify-center text-slate-500 font-mono text-xs">
+            <Loader2 className="w-6 h-6 animate-spin text-rose-400" />
           </div>
         ) : (stats?.top_neighborhoods || []).length === 0 ? (
-          <div className="p-8 text-center text-slate-500 text-sm">
+          <div className="p-8 text-center text-slate-500 font-mono text-xs">
             No neighborhood hotspot clusters detected yet.
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono">
             {stats.top_neighborhoods.map((n: any) => (
-              <div key={n.neighborhood} className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2">
+              <div key={n.neighborhood} className="p-4 rounded-2xl bg-slate-900/90 border border-white/10 space-y-2 hover:border-rose-500/40 transition-all">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-white text-sm">{n.neighborhood}</span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 font-semibold">
-                    {n.total_reports} Reports
+                  <span className="font-bold text-white text-sm flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-rose-400" /> {n.neighborhood}
+                  </span>
+                  <span className="text-[11px] px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">
+                    {n.total_reports} Incidents
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-xs text-slate-400 pt-1 border-t border-slate-800">
+                <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-white/5">
                   <span>Resolved: <strong className="text-emerald-400">{n.resolved_reports}</strong></span>
-                  <span>Open: <strong className="text-amber-400">{n.open_issues}</strong></span>
+                  <span>Active Open: <strong className="text-amber-400">{n.open_issues}</strong></span>
                 </div>
               </div>
             ))}
@@ -319,96 +352,103 @@ export default function AdminAnalyticsPage() {
       </div>
 
       {/* Live Citizen Reports & Triage Feed Table */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+      <div className="glass-panel p-6 rounded-3xl border border-white/10 space-y-4 shadow-[0_0_25px_rgba(0,0,0,0.4)]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
           <div>
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-blue-400" /> Live Citizen Reports & Incoming Triage Tickets
+            <h3 className="text-base font-mono font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-cyan-400" /> Incoming Triage Tickets & Citizen Reports
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Review, inspect, and route reported infrastructure hazards to department crews
+            <p className="text-xs text-slate-400 font-mono mt-0.5">
+              Inspect citizen field reports and triage into dispatched service requests
             </p>
           </div>
           <Link
             href="/service-requests"
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 self-start sm:self-auto"
+            className="px-4 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-mono font-bold transition-all flex items-center gap-1.5 self-start sm:self-auto"
           >
-            <span>Open Service Requests</span>
-            <TrendingUp className="w-3.5 h-3.5" />
+            <span>DISPATCH CENTER</span>
+            <ArrowUpRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
         {/* Triage error banner */}
         {triageError && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center gap-2 text-rose-400 text-xs">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center gap-2 text-rose-300 text-xs font-mono">
+            <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-400" />
             <span>{triageError}</span>
-            <button onClick={() => setTriageError(null)} className="ml-auto hover:text-rose-300">✕</button>
+            <button onClick={() => setTriageError(null)} className="ml-auto hover:text-rose-200">✕</button>
           </div>
         )}
 
         {loading ? (
-          <div className="p-8 flex items-center justify-center text-slate-500">
-            <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+          <div className="p-12 flex flex-col items-center justify-center gap-2 text-slate-500 font-mono text-xs">
+            <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
+            <span>Streaming Incoming Reports...</span>
           </div>
         ) : reports.length === 0 ? (
-          <div className="p-8 text-center text-slate-500 text-sm">
+          <div className="p-8 text-center text-slate-500 font-mono text-xs">
             No active citizen reports logged yet.
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full text-left text-xs border-collapse font-mono">
               <thead>
-                <tr className="border-b border-slate-800 text-slate-400 font-semibold uppercase tracking-wider">
+                <tr className="border-b border-white/10 text-slate-400 font-bold uppercase tracking-wider">
                   <th className="py-3 px-3">Tracking ID</th>
                   <th className="py-3 px-3">Category</th>
-                  <th className="py-3 px-3">Title & Details</th>
+                  <th className="py-3 px-3">Report Details</th>
                   <th className="py-3 px-3">Location</th>
                   <th className="py-3 px-3">Priority Score</th>
                   <th className="py-3 px-3">Status</th>
                   <th className="py-3 px-3 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/80 text-slate-300">
+              <tbody className="divide-y divide-white/5 text-slate-300">
                 {reports.map((r: any) => (
-                  <tr key={r.id} className="hover:bg-slate-900/50 transition-colors">
-                    <td className="py-3 px-3 font-mono font-bold text-blue-400">
+                  <tr key={r.id} className="hover:bg-cyan-500/[0.03] transition-colors">
+                    <td className="py-3.5 px-3 font-bold text-cyan-400">
                       {r.tracking_number || `REP-${r.id}`}
                     </td>
-                    <td className="py-3 px-3">
-                      <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-800 text-slate-200 border border-slate-700">
+                    <td className="py-3.5 px-3">
+                      <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-900 text-slate-200 border border-slate-800">
                         {r.category || 'OTHER'}
                       </span>
                     </td>
-                    <td className="py-3 px-3 max-w-xs">
+                    <td className="py-3.5 px-3 max-w-xs">
                       <div className="font-bold text-white truncate">{r.title}</div>
-                      <div className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">{r.description}</div>
+                      <div className="text-[11px] text-slate-400 line-clamp-1 mt-0.5 font-sans">{r.description}</div>
                     </td>
-                    <td className="py-3 px-3 text-slate-400 max-w-xs truncate">
+                    <td className="py-3.5 px-3 text-slate-400 max-w-xs truncate">
                       📍 {r.address || `${r.latitude?.toFixed(4)}, ${r.longitude?.toFixed(4)}`}
                     </td>
-                    <td className="py-3 px-3 font-bold text-white">
-                      {r.priority_score ?? 50}/100
+                    <td className="py-3.5 px-3 font-bold text-white">
+                      <span className={`px-2 py-0.5 rounded text-[11px] ${
+                        (r.priority_score ?? 50) >= 75 ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30' :
+                        (r.priority_score ?? 50) >= 50 ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' :
+                        'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
+                      }`}>
+                        {r.priority_score ?? 50}/100
+                      </span>
                     </td>
-                    <td className="py-3 px-3">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                    <td className="py-3.5 px-3">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
                         r.status === 'RESOLVED'
-                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
                           : r.status === 'IN_PROGRESS'
-                          ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                          : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                          ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
+                          : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
                       }`}>
                         {r.status?.replace('_', ' ') || 'SUBMITTED'}
                       </span>
                     </td>
-                    <td className="py-3 px-3 text-right">
+                    <td className="py-3.5 px-3 text-right">
                       <button
                         onClick={() => triageReport(r)}
                         disabled={triagingId === r.id}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white font-semibold transition-colors text-[11px] disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500 text-cyan-300 hover:text-black font-bold transition-all text-xs border border-cyan-500/30 disabled:opacity-60 disabled:cursor-not-allowed"
                       >
                         {triagingId === r.id ? (
-                          <><Loader2 className="w-3 h-3 animate-spin" /> Triaging...</>
+                          <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Triaging...</>
                         ) : (
                           'Triage Ticket'
                         )}

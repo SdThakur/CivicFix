@@ -104,3 +104,31 @@ async def test_staff_update_report_status(
     )
     assert update_res.status_code == 200
     assert update_res.json()["status"] == "UNDER_REVIEW"
+
+
+@pytest.mark.asyncio
+async def test_get_nearby_reports(client: AsyncClient, citizen_token_headers: dict):
+    """Test fetching reports within a spatial radius of specified coordinates."""
+    # Create a report at specific lat/lon
+    lat, lon = 39.0785, -76.7047
+    await client.post(
+        "/reports/",
+        json={
+            "title": "Nearby Test Pothole",
+            "category": "POTHOLE",
+            "description": "Pothole for nearby spatial radius test",
+            "latitude": lat,
+            "longitude": lon,
+            "address": "123 Main St",
+            "neighborhood": "Central",
+        },
+        headers=citizen_token_headers,
+    )
+
+    response = await client.get(
+        f"/reports/nearby?latitude={lat}&longitude={lon}&radius_km=0.5"
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) >= 1
+    assert any(r["title"] == "Nearby Test Pothole" for r in data)

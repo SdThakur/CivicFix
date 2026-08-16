@@ -176,6 +176,25 @@ class ReportService:
         """Fetch paginated reports."""
         return await report_repo.get_multi(db, filters)
 
+    async def get_nearby_reports(
+        self,
+        db: AsyncSession,
+        latitude: float,
+        longitude: float,
+        radius_km: float = 2.0,
+        category: Optional[ReportCategory] = None,
+        limit: int = 50,
+    ) -> List[Report]:
+        """Fetch reports near coordinates within spatial radius."""
+        return await report_repo.get_nearby(
+            db=db,
+            latitude=latitude,
+            longitude=longitude,
+            radius_km=radius_km,
+            category=category,
+            limit=limit,
+        )
+
     async def update_report_status(
         self,
         db: AsyncSession,

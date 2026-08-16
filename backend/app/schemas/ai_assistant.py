@@ -1,6 +1,6 @@
 """Pydantic v2 schemas for AI Triage & Assistant."""
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 from pydantic import BaseModel
 from app.models.report import PriorityLevel, ReportCategory
 
@@ -54,4 +54,6 @@ class AITriageImageResponse(BaseModel):
     recommended_action: str
     sla_info: str
     error_message: Optional[str]
+    # Latency instrumentation: wall-clock ms for each pipeline sub-step + total
+    timing_ms: Optional[Dict[str, object]] = None
 

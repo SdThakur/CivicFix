@@ -5,6 +5,8 @@ import logging
 from typing import Any, Dict, List, Optional
 import uuid
 
+from app.core.instrumentation import PipelineTimer
+
 from app.ai.department_routing import DepartmentRouter
 from app.ai.duplicate_detection import DuplicateDetector
 from app.ai.embeddings import ImageEmbedder
@@ -59,72 +61,97 @@ def process_report_task(
         user_email = report_data.get("user_email") or report_data.get("reporter_email")
         tracking_code = report_data.get("tracking_code") or f"TRK-{report_id[:8].upper()}"
 
-        # ----------------------------------------------------
-        # Step 1: Vision Analysis
-        # ----------------------------------------------------
-        vision_analyzer = get_vision_analyzer()
-        vision_result = vision_analyzer.analyze_image_sync(image_input, prompt_context=user_notes)
-        logger.info("Vision analysis completed for %s: Category=%s, Severity=%.1f", report_id, vision_result.category, vision_result.severity_score)
+        with PipelineTimer("process_report") as timer:
+            # ----------------------------------------------------
+            # Step 1: Vision Analysis
+            # ----------------------------------------------------
+            with timer.step("vision_analysis"):
+                vision_analyzer = get_vision_analyzer()
+                vision_result = vision_analyzer.analyze_image_sync(image_input, prompt_context=user_notes)
+            logger.info("Vision analysis completed for %s: Category=%s, Severity=%.1f", report_id, vision_result.category, vision_result.severity_score)
+
+            # ----------------------------------------------------
+            # Step 2: Image Embedding
+            # ----------------------------------------------------
+            with timer.step("clip_embedding"):
+                embedding = _embedder.generate_embedding(image_input)
+
+            # ----------------------------------------------------
+            # Step 3: Reverse Geocoding
+            # ----------------------------------------------------
+            with timer.step("reverse_geocoding"):
+                geocoder = get_geocoder()
+                geo_result = geocoder.reverse_geocode_sync(lat, lon)
+            address_str = geo_result.get("formatted_address", "Unknown Address")
+
+            # Prepare normalized report dictionary for duplicate comparison
+            normalized_report = {
+                "id": report_id,
+                "latitude": lat,
+                "longitude": lon,
+                "category": vision_result.category,
+                "image_embedding": embedding,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "address": address_str,
+                "description": user_notes,
+            }
+
+            # ----------------------------------------------------
+            # Step 4: Duplicate Detection
+            # ----------------------------------------------------
+            with timer.step("duplicate_detection"):
+                duplicates = []
+                if existing:
+                    duplicates = _duplicate_detector.find_duplicates(normalized_report, existing, threshold=0.75)
+
+            # ----------------------------------------------------
+            # Step 5: Department Routing
+            # ----------------------------------------------------
+            with timer.step("department_routing"):
+                routing_info = _department_router.route_category(
+                    category=vision_result.category,
+                    description=vision_result.description,
+                    tags=vision_result.tags,
+                )
+
+            # ----------------------------------------------------
+            # Step 6: Decision - Merge into Duplicate vs Create New Issue
+            # ----------------------------------------------------
+            with timer.step("priority_scoring"):
+                if duplicates:
+                    best_match = duplicates[0]
+                    existing_issue_id = best_match["issue_id"]
+                    existing_issue = best_match["issue_data"]
+                    current_count = int(existing_issue.get("report_count", 1)) + 1
+
+                    # Recalculate updated priority score with escalated report count
+                    updated_priority = _priority_engine.calculate_priority(
+                        visual_damage_score=vision_result.visual_damage_score,
+                        location_risk=existing_issue.get("location_risk", 0.5),
+                        infrastructure_type=vision_result.category,
+                        report_count=current_count,
+                        traffic_importance=existing_issue.get("traffic_importance", 0.5),
+                        safety_hazard=vision_result.safety_hazard,
+                    )
+                else:
+                    new_issue_id = f"ISSUE-{uuid.uuid4().hex[:10].upper()}"
+                    priority_result = _priority_engine.calculate_priority(
+                        visual_damage_score=vision_result.visual_damage_score,
+                        location_risk=0.50,  # Default moderate location risk
+                        infrastructure_type=vision_result.category,
+                        report_count=1,
+                        traffic_importance=0.50,
+                        safety_hazard=vision_result.safety_hazard,
+                    )
+
+        # Capture timing report after the pipeline exits
+        timing_report = timer.report()
+        timing_payload = timing_report.as_dict()
 
         # ----------------------------------------------------
-        # Step 2: Image Embedding
-        # ----------------------------------------------------
-        embedding = _embedder.generate_embedding(image_input)
-
-        # ----------------------------------------------------
-        # Step 3: Reverse Geocoding
-        # ----------------------------------------------------
-        geocoder = get_geocoder()
-        geo_result = geocoder.reverse_geocode_sync(lat, lon)
-        address_str = geo_result.get("formatted_address", "Unknown Address")
-
-        # Prepare normalized report dictionary for duplicate comparison
-        normalized_report = {
-            "id": report_id,
-            "latitude": lat,
-            "longitude": lon,
-            "category": vision_result.category,
-            "image_embedding": embedding,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "address": address_str,
-            "description": user_notes,
-        }
-
-        # ----------------------------------------------------
-        # Step 4: Duplicate Detection
-        # ----------------------------------------------------
-        duplicates = []
-        if existing:
-            duplicates = _duplicate_detector.find_duplicates(normalized_report, existing, threshold=0.75)
-
-        # ----------------------------------------------------
-        # Step 5: Department Routing
-        # ----------------------------------------------------
-        routing_info = _department_router.route_category(
-            category=vision_result.category,
-            description=vision_result.description,
-            tags=vision_result.tags,
-        )
-
-        # ----------------------------------------------------
-        # Step 6: Decision - Merge into Duplicate vs Create New Issue
+        # Assemble final result with embedded timing data
         # ----------------------------------------------------
         if duplicates:
-            best_match = duplicates[0]
-            existing_issue_id = best_match["issue_id"]
-            existing_issue = best_match["issue_data"]
-            current_count = int(existing_issue.get("report_count", 1)) + 1
-
-            # Recalculate updated priority score with escalated report count
-            updated_priority = _priority_engine.calculate_priority(
-                visual_damage_score=vision_result.visual_damage_score,
-                location_risk=existing_issue.get("location_risk", 0.5),
-                infrastructure_type=vision_result.category,
-                report_count=current_count,
-                traffic_importance=existing_issue.get("traffic_importance", 0.5),
-                safety_hazard=vision_result.safety_hazard,
-            )
-
             result_summary = {
                 "status": "merged",
                 "action": "merged_into_existing_issue",
@@ -136,22 +163,10 @@ def process_report_task(
                 "vision_analysis": vision_result.model_dump(),
                 "geocoding": geo_result,
                 "routing": routing_info,
+                "timing_ms": timing_payload,
             }
             logger.info("Report %s merged into existing Issue %s (Similarity: %.2f)", report_id, existing_issue_id, best_match["similarity_score"])
-
         else:
-            # Create new parent issue data structure
-            new_issue_id = f"ISSUE-{uuid.uuid4().hex[:10].upper()}"
-
-            priority_result = _priority_engine.calculate_priority(
-                visual_damage_score=vision_result.visual_damage_score,
-                location_risk=0.50,  # Default moderate location risk
-                infrastructure_type=vision_result.category,
-                report_count=1,
-                traffic_importance=0.50,
-                safety_hazard=vision_result.safety_hazard,
-            )
-
             result_summary = {
                 "status": "created_issue",
                 "action": "created_new_issue",
@@ -167,6 +182,7 @@ def process_report_task(
                 "vision_analysis": vision_result.model_dump(),
                 "embedding_dim": len(embedding),
                 "tracking_code": tracking_code,
+                "timing_ms": timing_payload,
             }
             logger.info("Created new Issue %s for Report %s. Assigned to %s", new_issue_id, report_id, routing_info["department_name"])
 

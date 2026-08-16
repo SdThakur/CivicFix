@@ -78,21 +78,21 @@ export default function Navbar() {
   navLinks.push({ href: '/transparency', label: 'Transparency', icon: Eye });
 
   return (
-    <header className="sticky top-0 z-50 glass-panel border-b border-slate-800/80">
+    <header className="sticky top-0 z-50 glass-panel border-b border-white/10 shadow-[0_0_20px_rgba(0,242,255,0.1)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:scale-105 transition-transform shadow-[0_0_15px_rgba(0,242,255,0.2)]">
               <ShieldAlert className="w-6 h-6" />
             </div>
             <div className="flex flex-col">
-              <span className="font-bold text-xl tracking-tight text-white flex items-center gap-1">
-                Civic<span className="text-blue-500">Fix</span>
+              <span className="font-extrabold text-xl tracking-tight text-white flex items-center gap-1 font-display-lg">
+                Civic<span className="text-cyan-400">Fix</span>
               </span>
-              <span className="text-[10px] text-slate-400 font-medium tracking-wider uppercase">
-                AI Infrastructure Ops
+              <span className="text-[10px] text-cyan-400/80 font-mono font-bold tracking-wider uppercase">
+                Mission Control Ops
               </span>
             </div>
           </Link>
@@ -108,7 +108,7 @@ export default function Navbar() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="ml-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium text-sm flex items-center gap-2 shadow-lg shadow-blue-600/20 transition-all hover:shadow-blue-600/30 hover:-translate-y-0.5"
+                    className="ml-2 px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-mono font-bold text-xs flex items-center gap-2 shadow-[0_0_15px_rgba(0,242,255,0.3)] transition-all hover:shadow-[0_0_25px_rgba(0,242,255,0.5)] hover:-translate-y-0.5"
                   >
                     {Icon && <Icon className="w-4 h-4" />}
                     {link.label}
@@ -120,13 +120,13 @@ export default function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                  className={`px-3 py-2 rounded-xl text-xs font-mono transition-colors flex items-center gap-1.5 ${
                     isActive
-                      ? 'bg-slate-800 text-blue-400 border border-slate-700'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                      ? 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 shadow-[0_0_10px_rgba(0,242,255,0.15)] font-bold'
+                      : 'text-slate-300 hover:text-white hover:bg-white/[0.05]'
                   }`}
                 >
-                  {Icon && <Icon className="w-4 h-4 text-slate-400" />}
+                  {Icon && <Icon className="w-4 h-4 text-cyan-400/80" />}
                   {link.label}
                 </Link>
               );

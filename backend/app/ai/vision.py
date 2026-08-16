@@ -6,11 +6,13 @@ import base64
 import hashlib
 import json
 import logging
-import os
 from typing import Any, Dict, List, Optional, Union
+import urllib.error
+import urllib.request
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
+
 
 
 class VisionAnalysisResult(BaseModel):
@@ -116,7 +118,7 @@ class MockVisionAnalyzer(VisionAnalyzer):
 class GeminiVisionAnalyzer(VisionAnalyzer):
     """Google Gemini AI implementation for civic infrastructure vision analysis."""
 
-    def __init__(self, api_key: Optional[str] = None, model_name: str = "gemini-2.5-flash"):
+    def __init__(self, api_key: Optional[str] = None, model_name: str = "gemini-1.5-flash"):
         from app.core.config import settings
         self.api_key = api_key or getattr(settings, "GEMINI_API_KEY", None) or os.getenv("GEMINI_API_KEY")
         self.model_name = model_name
@@ -125,7 +127,7 @@ class GeminiVisionAnalyzer(VisionAnalyzer):
     async def analyze_image(
         self, image_data: Union[bytes, str], prompt_context: Optional[str] = None
     ) -> VisionAnalysisResult:
-        """Analyze image using Gemini 2.5 REST API with automatic mock fallback on error."""
+        """Analyze image using Gemini REST API with automatic mock fallback on error."""
         if not self.api_key:
             return await self.mock_fallback.analyze_image(image_data, prompt_context)
 
@@ -184,7 +186,8 @@ class GeminiVisionAnalyzer(VisionAnalyzer):
             # REST call to Google Generative Language API
             import urllib.request
 
-            models_to_try = [self.model_name, "gemini-flash-latest", "gemini-2.0-flash"]
+            models_to_try = [self.model_name, "gemini-1.5-flash-latest", "gemini-1.5-pro", "gemini-2.0-flash-exp"]
+
             last_err = None
 
             for m in models_to_try:
@@ -216,6 +219,14 @@ class GeminiVisionAnalyzer(VisionAnalyzer):
                     parsed["raw_response"] = {"model": m, "raw_text": raw_text}
                     return VisionAnalysisResult(**parsed)
 
+                except urllib.error.HTTPError as err:
+                    last_err = err
+                    try:
+                        err_body = err.read().decode("utf-8")
+                    except Exception:
+                        err_body = str(err)
+                    logger.warning("Gemini REST model %s HTTP %s: %s", m, err.code, err_body)
+                    continue
                 except Exception as err:
                     last_err = err
                     logger.warning("Gemini REST model %s failed: %s", m, err)
@@ -224,14 +235,16 @@ class GeminiVisionAnalyzer(VisionAnalyzer):
             raise last_err or RuntimeError("All Gemini Vision models failed")
 
         except Exception as err:
-            logger.error("Gemini Vision API call failed: %s. Falling back to Mock analyzer.", err)
+            logger.info("Gemini Vision API unavailable (%s). Using Mock analyzer fallback.", err)
             return await self.mock_fallback.analyze_image(image_data, prompt_context)
 
 
 def get_vision_analyzer(api_key: Optional[str] = None) -> VisionAnalyzer:
-    """Factory function returning GeminiVisionAnalyzer if API key available, else MockVisionAnalyzer."""
+    """Factory function returning GeminiVisionAnalyzer if valid API key available, else MockVisionAnalyzer."""
     from app.core.config import settings
     effective_key = api_key or getattr(settings, "GEMINI_API_KEY", None) or os.getenv("GEMINI_API_KEY")
-    if effective_key:
-        return GeminiVisionAnalyzer(api_key=effective_key)
+    # Google AI Studio Gemini API keys start with 'AIzaSy'
+    if effective_key and isinstance(effective_key, str) and effective_key.strip().startswith("AIzaSy"):
+        return GeminiVisionAnalyzer(api_key=effective_key.strip())
     return MockVisionAnalyzer()
+
