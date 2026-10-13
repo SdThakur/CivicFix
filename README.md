@@ -379,6 +379,7 @@ pytest tests/test_reports.py -v
 
 MIT License © 2026 [Satya Thakur](https://github.com/SdThakur)
 
-[![Architecture diagram of sdthakur/civicfix](https://gitdiagram.com/sdthakur/civicfix/diagram.png)](https://gitdiagram.com/sdthakur/civicfix?utm_source=readme&utm_medium=picture)
+<img width="10164" height="8567" alt="diagram" src="https://github.com/user-attachments/assets/d427d351-bd16-435c-8d18-926671ff0ac2" />
+
 
 Designed for municipal governments and civic technology modernization initiatives.
