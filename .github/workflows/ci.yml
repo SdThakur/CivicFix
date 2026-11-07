@@ -56,16 +56,16 @@ jobs:
           --health-timeout 3s
           --health-retries 5
       postgres:
-        image: postgis/postgis:15-3.3-alpine
+        image: postgres:15-alpine
         env:
-          POSTGRES_USER: civicfix
+          POSTGRES_USER: postgres
           POSTGRES_PASSWORD: civicfix_secret
           POSTGRES_DB: civicfix_db
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U civicfix -d civicfix_db"
-          --health-interval 5s
+          --health-cmd pg_isready
+          --health-interval 10s
           --health-timeout 5s
           --health-retries 5
 
@@ -84,7 +84,7 @@ jobs:
 
       - name: Run Test Suite
         env:
-          DATABASE_URL: postgresql+asyncpg://civicfix:civicfix_secret@localhost:5432/civicfix_db
+          DATABASE_URL: postgresql+asyncpg://postgres:civicfix_secret@localhost:5432/civicfix_db
           LIMITS_REDIS_URL: redis://localhost:6380/0
           QUEUE_REDIS_URL: redis://localhost:6379/0
           SUPABASE_SECRET_KEY: test_supabase_secret_key_ci_environment_only
@@ -99,16 +99,16 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgis/postgis:15-3.3-alpine
+        image: postgres:15-alpine
         env:
-          POSTGRES_USER: civicfix
+          POSTGRES_USER: postgres
           POSTGRES_PASSWORD: civicfix_secret
           POSTGRES_DB: civicfix_db
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U civicfix -d civicfix_db"
-          --health-interval 5s
+          --health-cmd pg_isready
+          --health-interval 10s
           --health-timeout 5s
           --health-retries 5
 
@@ -127,7 +127,7 @@ jobs:
 
       - name: Validate Alembic Migrations
         env:
-          DATABASE_URL: postgresql+asyncpg://civicfix:civicfix_secret@localhost:5432/civicfix_db
+          DATABASE_URL: postgresql+asyncpg://postgres:civicfix_secret@localhost:5432/civicfix_db
           PYTHONPATH: backend
         run: |
           cd backend
