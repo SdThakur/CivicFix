@@ -4,7 +4,6 @@ Manages connection pool to QUEUE_REDIS_URL, idempotent report enqueueing,
 and queue health monitoring.
 """
 
-import asyncio
 import logging
 from typing import Optional
 from arq.connections import ArqRedis, RedisSettings, create_pool
@@ -57,9 +56,13 @@ async def enqueue_report(pool: Optional[ArqRedis], report_id: str) -> bool:
             _job_id=job_id,
         )
         if job is None:
-            logger.info(f"Job {job_id} already queued or running; duplicate enqueue rejected.")
+            logger.info(
+                f"Job {job_id} already queued or running; duplicate enqueue rejected."
+            )
             return False
-        logger.info(f"Successfully enqueued report {report_id} to ARQ worker queue (job_id: {job_id}).")
+        logger.info(
+            f"Successfully enqueued report {report_id} to ARQ worker queue (job_id: {job_id})."
+        )
         return True
     except Exception as e:
         logger.error(
@@ -67,4 +70,3 @@ async def enqueue_report(pool: Optional[ArqRedis], report_id: str) -> bool:
             "Report will remain in PENDING state for sweeper recovery."
         )
         return False
-

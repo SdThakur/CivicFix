@@ -50,7 +50,9 @@ async def verify_turnstile_token(
             if result.get("success"):
                 return True
             else:
-                logger.warning(f"Turnstile verification failed: {result.get('error-codes')}")
+                logger.warning(
+                    f"Turnstile verification failed: {result.get('error-codes')}"
+                )
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Cloudflare Turnstile bot verification failed. Please try again.",

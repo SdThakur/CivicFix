@@ -9,17 +9,14 @@ Provides:
 - Daily Gemini AI budget counter guarding against quota exhaustion
 """
 
-import asyncio
 from datetime import datetime, timezone
 import json
 import logging
-import math
 import time
 from typing import Any, Callable, Dict, Optional, Tuple
 
-from fastapi import HTTPException, Request, Response, status
+from fastapi import HTTPException, Request, status
 import redis.asyncio as aioredis
-from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -84,10 +81,14 @@ class RateLimiter:
             await self.client.ping()
             self._script = self.client.register_script(SLIDING_WINDOW_LUA)
             self._is_connected = True
-            logger.info(f"RateLimiter successfully connected to Redis at {self.redis_url}")
+            logger.info(
+                f"RateLimiter successfully connected to Redis at {self.redis_url}"
+            )
         except Exception as e:
             self._is_connected = False
-            logger.warning(f"Could not connect to Redis at {self.redis_url}: {e}. Local fallback active.")
+            logger.warning(
+                f"Could not connect to Redis at {self.redis_url}: {e}. Local fallback active."
+            )
 
     async def close(self) -> None:
         """Close connection pool gracefully on shutdown."""
@@ -120,7 +121,9 @@ class RateLimiter:
         count = int(res[2])
         return allowed, retry_after, count
 
-    async def get_idempotent_response(self, idempotency_key: str, identity: str) -> Optional[Dict[str, Any]]:
+    async def get_idempotent_response(
+        self, idempotency_key: str, identity: str
+    ) -> Optional[Dict[str, Any]]:
         """Retrieve stored idempotent response if previously processed."""
         if not self.is_connected:
             return None
@@ -134,7 +137,11 @@ class RateLimiter:
         return None
 
     async def set_idempotent_response(
-        self, idempotency_key: str, identity: str, response_data: Dict[str, Any], ttl_seconds: int = 86400
+        self,
+        idempotency_key: str,
+        identity: str,
+        response_data: Dict[str, Any],
+        ttl_seconds: int = 86400,
     ) -> None:
         """Store idempotent response for subsequent identical submissions (24h TTL)."""
         if not self.is_connected:
@@ -154,7 +161,9 @@ class RateLimiter:
             # If Redis unavailable, allow or guard based on setting
             return True
 
-        today_key = f"gemini_daily_budget:{datetime.now(timezone.utc).strftime('%Y-%m-%d')}"
+        today_key = (
+            f"gemini_daily_budget:{datetime.now(timezone.utc).strftime('%Y-%m-%d')}"
+        )
         try:
             count = await self.client.incr(today_key)
             if count == 1:
@@ -218,7 +227,9 @@ def rate_limit(
 
         if limiter is None or not limiter.is_connected:
             if not fail_open:
-                logger.error("Rate limiter unavailable and fail_open is False; raising 503.")
+                logger.error(
+                    "Rate limiter unavailable and fail_open is False; raising 503."
+                )
                 raise HTTPException(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                     detail="Rate limiting service is unavailable. Please retry shortly.",
@@ -256,4 +267,3 @@ def rate_limit(
                 )
 
     return dependency
-

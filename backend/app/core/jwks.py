@@ -10,7 +10,7 @@ Features:
 """
 
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 from fastapi import HTTPException, Request, status
 import jwt
 from jwt import PyJWKClient, PyJWTError
@@ -20,6 +20,7 @@ logger = logging.getLogger("civicfix.jwks")
 
 # Initialize JWKS Client with in-memory public key cache
 _jwks_client: Optional[PyJWKClient] = None
+
 
 def get_jwks_client() -> PyJWKClient:
     """Lazily initialize and return the cached JWKS client."""
@@ -117,7 +118,9 @@ def verify_supabase_jwt(
         )
 
 
-async def authenticate_request_jwt(request: Request, authorization: Optional[str]) -> str:
+async def authenticate_request_jwt(
+    request: Request, authorization: Optional[str]
+) -> str:
     """Dependency helper: Authenticates request and sets user state on request.state."""
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(
@@ -146,4 +149,3 @@ async def authenticate_request_jwt(request: Request, authorization: Optional[str
     request.state.is_anonymous = is_anon
 
     return str(user_id)
-

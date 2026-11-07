@@ -9,9 +9,8 @@ Provides:
 import json
 import logging
 import math
-from typing import Any, Callable, Coroutine, Dict, Optional, Tuple
+from typing import Any, Callable, Coroutine, Tuple
 from fastapi import Request, Response
-from app.core.config import settings
 
 logger = logging.getLogger("civicfix.cache")
 
@@ -19,13 +18,13 @@ logger = logging.getLogger("civicfix.cache")
 def get_zoom_step(zoom: int) -> float:
     """Return grid snapping step in degrees based on map zoom level."""
     if zoom <= 8:
-        return 0.05       # ~5.5 km grid
+        return 0.05  # ~5.5 km grid
     elif zoom <= 11:
-        return 0.01       # ~1.1 km grid
+        return 0.01  # ~1.1 km grid
     elif zoom <= 14:
-        return 0.002      # ~220 m grid
+        return 0.002  # ~220 m grid
     else:
-        return 0.0005     # ~55 m grid
+        return 0.0005  # ~55 m grid
 
 
 def snap_bounds(
@@ -57,7 +56,7 @@ def build_cdn_cache_control(ttl_seconds: int, is_authenticated: bool = False) ->
     """
     if is_authenticated:
         return "private, no-cache, no-store, must-revalidate"
-    
+
     max_age = min(15, ttl_seconds)
     stale_revalidate = max(60, ttl_seconds * 2)
     return f"public, max-age={max_age}, s-maxage={ttl_seconds}, stale-while-revalidate={stale_revalidate}"
@@ -85,7 +84,9 @@ async def cached_json(
             content=json_str,
             media_type="application/json",
             headers={
-                "Cache-Control": build_cdn_cache_control(ttl_seconds, is_authenticated=True),
+                "Cache-Control": build_cdn_cache_control(
+                    ttl_seconds, is_authenticated=True
+                ),
                 "X-Cache": "BYPASS",
                 "Vary": "Accept-Encoding, Authorization",
             },
@@ -109,7 +110,9 @@ async def cached_json(
                     content=cached_data,
                     media_type="application/json",
                     headers={
-                        "Cache-Control": build_cdn_cache_control(ttl_seconds, is_authenticated=False),
+                        "Cache-Control": build_cdn_cache_control(
+                            ttl_seconds, is_authenticated=False
+                        ),
                         "X-Cache": "HIT",
                         "X-Cache-Key": cache_key,
                         "Vary": "Accept-Encoding, Authorization",
@@ -133,10 +136,11 @@ async def cached_json(
         content=json_str,
         media_type="application/json",
         headers={
-            "Cache-Control": build_cdn_cache_control(ttl_seconds, is_authenticated=False),
+            "Cache-Control": build_cdn_cache_control(
+                ttl_seconds, is_authenticated=False
+            ),
             "X-Cache": "MISS",
             "X-Cache-Key": cache_key,
             "Vary": "Accept-Encoding, Authorization",
         },
     )
-

@@ -9,7 +9,6 @@ Features:
 """
 
 import asyncio
-from datetime import datetime, timezone
 import logging
 import os
 import random
@@ -23,6 +22,7 @@ T = TypeVar("T")
 
 class CircuitBreakerOpenException(Exception):
     """Raised when an outbound service call is rejected because the circuit breaker is OPEN."""
+
     pass
 
 
@@ -73,25 +73,31 @@ class CircuitBreaker:
                     elapsed = now - tripped_at
                     if elapsed < self.cooldown_seconds:
                         logger.warning(
-                            f"CircuitBreaker [{self.name}] is OPEN (cooldown {elapsed:.1f}/{self.cooldown_seconds}s). Fast-failing."
+                            f"CircuitBreaker [{self.name}] is OPEN "
+                            f"(cooldown {elapsed:.1f}/{self.cooldown_seconds}s). Fast-failing."
                         )
                         return False
                     else:
-                        logger.info(f"CircuitBreaker [{self.name}] entering HALF_OPEN probe state.")
+                        logger.info(
+                            f"CircuitBreaker [{self.name}] entering HALF_OPEN probe state."
+                        )
                         return True
 
                 failures_raw = await redis_client.get(self.key_failures)
                 failures = int(failures_raw) if failures_raw else 0
                 return failures < self.failure_threshold
             except Exception as e:
-                logger.warning(f"Error checking circuit in Redis: {e}; falling back to local state.")
+                logger.warning(
+                    f"Error checking circuit in Redis: {e}; falling back to local state."
+                )
 
         # Local fallback
         if self._local_tripped_at is not None:
             elapsed = now - self._local_tripped_at
             if elapsed < self.cooldown_seconds:
                 logger.warning(
-                    f"CircuitBreaker [{self.name}] is OPEN (cooldown {elapsed:.1f}/{self.cooldown_seconds}s). Fast-failing."
+                    f"CircuitBreaker [{self.name}] is OPEN (cooldown {elapsed:.1f}/{self.cooldown_seconds}s). "
+                    "Fast-failing."
                 )
                 return False
             else:
@@ -110,7 +116,9 @@ class CircuitBreaker:
             try:
                 await redis_client.delete(self.key_failures)
                 await redis_client.delete(self.key_tripped_at)
-                logger.info(f"CircuitBreaker [{self.name}] reset to CLOSED on successful call.")
+                logger.info(
+                    f"CircuitBreaker [{self.name}] reset to CLOSED on successful call."
+                )
             except Exception as e:
                 logger.warning(f"Error resetting circuit in Redis: {e}")
 
@@ -122,10 +130,14 @@ class CircuitBreaker:
         if redis_client:
             try:
                 fails = await redis_client.incr(self.key_failures)
-                await redis_client.expire(self.key_failures, int(self.cooldown_seconds * 3))
+                await redis_client.expire(
+                    self.key_failures, int(self.cooldown_seconds * 3)
+                )
 
                 if fails >= self.failure_threshold:
-                    await redis_client.setex(self.key_tripped_at, int(self.cooldown_seconds), str(now))
+                    await redis_client.setex(
+                        self.key_tripped_at, int(self.cooldown_seconds), str(now)
+                    )
                     logger.critical(
                         f"ALERT: CircuitBreaker [{self.name}] TRIPPED TO OPEN after {fails} consecutive failures! "
                         f"Cooldown set to {self.cooldown_seconds}s."
@@ -141,8 +153,8 @@ class CircuitBreaker:
             self._local_tripped_at = now
             self._local_state = "OPEN"
             logger.critical(
-                f"ALERT: CircuitBreaker [{self.name}] TRIPPED TO OPEN after {self._local_failures} consecutive failures! "
-                f"Cooldown set to {self.cooldown_seconds}s."
+                f"ALERT: CircuitBreaker [{self.name}] TRIPPED TO OPEN after "
+                f"{self._local_failures} consecutive failures! Cooldown set to {self.cooldown_seconds}s."
             )
             newly_tripped = True
 
@@ -157,7 +169,9 @@ gemini_circuit_breaker = CircuitBreaker(
 )
 
 
-async def call_with_timeout(coro: Coroutine[Any, Any, T], timeout_seconds: float = 15.0) -> T:
+async def call_with_timeout(
+    coro: Coroutine[Any, Any, T], timeout_seconds: float = 15.0
+) -> T:
     """Execute coroutine with strict timeout protection."""
     try:
         return await asyncio.wait_for(coro, timeout=timeout_seconds)
@@ -184,11 +198,13 @@ async def retry_with_jitter(
         except retryable_exceptions as e:
             last_exception = e
             if attempt == max_retries:
-                logger.error(f"Retries exhausted ({max_retries}/{max_retries}) on outbound call: {e}")
+                logger.error(
+                    f"Retries exhausted ({max_retries}/{max_retries}) on outbound call: {e}"
+                )
                 raise
 
             # Calculate bounded delay with full jitter
-            exp_backoff = min(max_delay, base_delay * (2 ** attempt))
+            exp_backoff = min(max_delay, base_delay * (2**attempt))
             jittered_delay = exp_backoff * random.uniform(0.5, 1.5)
 
             logger.warning(
@@ -198,4 +214,3 @@ async def retry_with_jitter(
             await asyncio.sleep(jittered_delay)
 
     raise last_exception  # type: ignore
-

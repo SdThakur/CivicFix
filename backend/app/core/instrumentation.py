@@ -53,9 +53,7 @@ class PipelineTimingReport:
 
     def log_summary(self) -> None:
         """Emit a structured INFO log with per-step and total timings."""
-        step_parts = ", ".join(
-            f"{name}={ms:.1f}ms" for name, ms in self.steps.items()
-        )
+        step_parts = ", ".join(f"{name}={ms:.1f}ms" for name, ms in self.steps.items())
         sla_flag = "✓ WITHIN SLA" if self.within_sla else "✗ EXCEEDED SLA"
         logger.info(
             "[Pipeline: %s] total=%.1fms  %s  [%s]  steps: %s",
@@ -131,7 +129,11 @@ class PipelineTimer:
         if self._pipeline_start is None:
             raise RuntimeError("PipelineTimer was never entered as a context manager.")
 
-        end = self._pipeline_end if self._pipeline_end is not None else time.perf_counter()
+        end = (
+            self._pipeline_end
+            if self._pipeline_end is not None
+            else time.perf_counter()
+        )
         total_ms = (end - self._pipeline_start) * 1000.0
 
         return PipelineTimingReport(

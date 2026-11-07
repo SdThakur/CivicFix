@@ -9,16 +9,12 @@ Defines operational telemetry metrics:
 - Circuit breaker state gauges
 """
 
-import os
-from typing import Optional
 from prometheus_client import (
-    CollectorRegistry,
     Counter,
     Gauge,
     Histogram,
     REGISTRY,
     generate_latest,
-    CONTENT_TYPE_LATEST,
 )
 
 # Shared or custom registry
@@ -103,4 +99,3 @@ CIRCUIT_BREAKER_STATE = Gauge(
 def get_prometheus_metrics() -> bytes:
     """Serialize all registered Prometheus metrics to Prometheus text exposition format."""
     return generate_latest(registry)
-

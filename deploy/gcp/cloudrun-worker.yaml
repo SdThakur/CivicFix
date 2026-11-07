@@ -43,3 +43,4 @@ spec:
                 secretKeyRef:
                   name: civicfix-gemini-key
                   key: latest
+

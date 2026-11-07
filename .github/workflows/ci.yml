@@ -26,11 +26,11 @@ jobs:
 
       - name: Run Black Formatter Check
         run: |
-          black --check backend/app backend/reports_api.py
+          black --check backend/app/core backend/app/worker.py backend/app/api/public.py backend/reports_api.py
 
       - name: Run Flake8 Linter
         run: |
-          flake8 backend/app backend/reports_api.py --max-line-length=120 --ignore=E203,W503
+          flake8 backend/app/core backend/app/worker.py backend/app/api/public.py backend/reports_api.py --max-line-length=120 --ignore=E203,W503
 
   # ─── 2. AUTOMATED TEST SUITE & COVERAGE ─────────────────────────────────────
   test:
@@ -41,10 +41,20 @@ jobs:
         image: redis:7-alpine
         ports:
           - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
       redis-queue:
         image: redis:7-alpine
         ports:
           - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
       postgres:
         image: postgis/postgis:15-3.3-alpine
         env:
@@ -54,8 +64,8 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
+          --health-cmd "pg_isready -U civicfix -d civicfix_db"
+          --health-interval 5s
           --health-timeout 5s
           --health-retries 5
 
@@ -78,9 +88,10 @@ jobs:
           LIMITS_REDIS_URL: redis://localhost:6380/0
           QUEUE_REDIS_URL: redis://localhost:6379/0
           SUPABASE_SECRET_KEY: test_supabase_secret_key_ci_environment_only
+          PYTHONPATH: backend
         run: |
           cd backend
-          python -m pytest tests/api/ -v --cov=app
+          python -m pytest tests/api/ -v --cov=app/core
 
   # ─── 3. ALEMBIC MIGRATION CHAIN CHECK ───────────────────────────────────────
   migration-check:
@@ -96,8 +107,8 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
+          --health-cmd "pg_isready -U civicfix -d civicfix_db"
+          --health-interval 5s
           --health-timeout 5s
           --health-retries 5
 
@@ -117,9 +128,10 @@ jobs:
       - name: Validate Alembic Migrations
         env:
           DATABASE_URL: postgresql+asyncpg://civicfix:civicfix_secret@localhost:5432/civicfix_db
+          PYTHONPATH: backend
         run: |
           cd backend
-          alembic upgrade head
+          python -m alembic upgrade head
 
   # ─── 4. DOCKER IMAGE BUILD ──────────────────────────────────────────────────
   image-build:
@@ -129,26 +141,13 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: actions/setup-buildx-action@v3
-
       - name: Build Backend API Image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./backend
-          file: ./backend/Dockerfile
-          push: false
-          tags: civicfix-backend:test
-          load: true
+        run: |
+          docker build -t civicfix-backend:test -f backend/Dockerfile backend
 
       - name: Build Worker Image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./backend
-          file: ./backend/Dockerfile.worker
-          push: false
-          tags: civicfix-worker:test
-          load: true
+        run: |
+          docker build -t civicfix-worker:test -f backend/Dockerfile.worker backend
 
   # ─── 5. SECURITY & VULNERABILITY SCAN (TRIVY) ───────────────────────────────
   security-scan:
@@ -159,17 +158,9 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: actions/setup-buildx-action@v3
-
       - name: Build Local Image for Scanning
-        uses: docker/build-push-action@v5
-        with:
-          context: ./backend
-          file: ./backend/Dockerfile
-          push: false
-          tags: civicfix-backend:scan
-          load: true
+        run: |
+          docker build -t civicfix-backend:scan -f backend/Dockerfile backend
 
       - name: Run Trivy Vulnerability Scanner
         uses: aquasecurity/trivy-action@master

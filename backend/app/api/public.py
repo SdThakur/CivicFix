@@ -24,7 +24,7 @@ from app.core.cache import snap_bounds, cached_json
 from app.core.exif import strip_exif_metadata
 from app.api.deps import get_read_db
 from app.models.issue import Issue, IssueStatus
-from app.models.report import Report, ReportStatus
+from app.models.report import Report
 from reports_api import _in_memory_issues, _in_memory_reports
 
 logger = logging.getLogger("civicfix.public_api")
@@ -33,7 +33,11 @@ router = APIRouter(prefix="/public", tags=["Public Scaled Read Endpoints"])
 
 
 @router.get("/map", summary="Public Viewport Map Query (Quantized & Cached)")
-@router.get("/map/viewport", summary="Public Viewport Map Query (Quantized & Cached)", include_in_schema=False)
+@router.get(
+    "/map/viewport",
+    summary="Public Viewport Map Query (Quantized & Cached)",
+    include_in_schema=False,
+)
 async def get_public_map_viewport(
     request: Request,
     min_lat: float = Query(..., ge=-90.0, le=90.0, description="Minimum latitude"),
@@ -82,20 +86,36 @@ async def get_public_map_viewport(
             db_issues = db_res.scalars().all()
 
             for item in db_issues:
-                results.append({
-                    "id": str(item.id),
-                    "code": item.issue_code,
-                    "title": item.title,
-                    "category": item.category.value if hasattr(item.category, "value") else str(item.category),
-                    "status": item.status.value if hasattr(item.status, "value") else str(item.status),
-                    "priority": item.priority.value if hasattr(item.priority, "value") else str(item.priority),
-                    "latitude": item.latitude,
-                    "longitude": item.longitude,
-                    "address": item.address,
-                    "neighborhood": item.neighborhood,
-                    "report_count": item.total_reports_count,
-                    "created_at": item.created_at.isoformat() if item.created_at else None,
-                })
+                results.append(
+                    {
+                        "id": str(item.id),
+                        "code": item.issue_code,
+                        "title": item.title,
+                        "category": (
+                            item.category.value
+                            if hasattr(item.category, "value")
+                            else str(item.category)
+                        ),
+                        "status": (
+                            item.status.value
+                            if hasattr(item.status, "value")
+                            else str(item.status)
+                        ),
+                        "priority": (
+                            item.priority.value
+                            if hasattr(item.priority, "value")
+                            else str(item.priority)
+                        ),
+                        "latitude": item.latitude,
+                        "longitude": item.longitude,
+                        "address": item.address,
+                        "neighborhood": item.neighborhood,
+                        "report_count": item.total_reports_count,
+                        "created_at": (
+                            item.created_at.isoformat() if item.created_at else None
+                        ),
+                    }
+                )
         except Exception as e:
             logger.debug(f"DB query skipped or empty for viewport: {e}")
 
@@ -107,22 +127,27 @@ async def get_public_map_viewport(
                 if s_min_lat <= lat <= s_max_lat and s_min_lng <= lng <= s_max_lng:
                     if status and issue.get("status", "").lower() != status.lower():
                         continue
-                    if category and issue.get("category", "").lower() != category.lower():
+                    if (
+                        category
+                        and issue.get("category", "").lower() != category.lower()
+                    ):
                         continue
-                    results.append({
-                        "id": issue_id,
-                        "code": issue.get("tracking_number", f"ISS-{issue_id[:6]}"),
-                        "title": issue.get("title", "Infrastructure Issue"),
-                        "category": issue.get("category", "OTHER"),
-                        "status": issue.get("status", "SUBMITTED"),
-                        "priority": issue.get("priority_level", "MEDIUM"),
-                        "latitude": lat,
-                        "longitude": lng,
-                        "address": issue.get("address", "Public Right-of-Way"),
-                        "neighborhood": issue.get("neighborhood", "Downtown"),
-                        "report_count": issue.get("duplicate_count", 0) + 1,
-                        "created_at": issue.get("created_at"),
-                    })
+                    results.append(
+                        {
+                            "id": issue_id,
+                            "code": issue.get("tracking_number", f"ISS-{issue_id[:6]}"),
+                            "title": issue.get("title", "Infrastructure Issue"),
+                            "category": issue.get("category", "OTHER"),
+                            "status": issue.get("status", "SUBMITTED"),
+                            "priority": issue.get("priority_level", "MEDIUM"),
+                            "latitude": lat,
+                            "longitude": lng,
+                            "address": issue.get("address", "Public Right-of-Way"),
+                            "neighborhood": issue.get("neighborhood", "Downtown"),
+                            "report_count": issue.get("duplicate_count", 0) + 1,
+                            "created_at": issue.get("created_at"),
+                        }
+                    )
 
         return results
 
@@ -144,8 +169,14 @@ async def get_public_stats(
 
     async def fetch_stats() -> Dict[str, Any]:
         total_reports = len(_in_memory_reports)
-        open_issues = sum(1 for i in _in_memory_issues.values() if i.get("status") not in ("RESOLVED", "CLOSED"))
-        resolved_reports = sum(1 for r in _in_memory_reports.values() if r.get("status") == "DONE")
+        open_issues = sum(
+            1
+            for i in _in_memory_issues.values()
+            if i.get("status") not in ("RESOLVED", "CLOSED")
+        )
+        resolved_reports = sum(
+            1 for r in _in_memory_reports.values() if r.get("status") == "DONE"
+        )
 
         try:
             r_count = await db.execute(select(func.count(Report.id)))
@@ -155,7 +186,7 @@ async def get_public_stats(
             i_count = await db.execute(
                 select(func.count(Issue.id)).where(Issue.status != IssueStatus.RESOLVED)
             )
-            open_issues += (i_count.scalar() or 0)
+            open_issues += i_count.scalar() or 0
         except Exception as e:
             logger.debug(f"DB stats aggregation fallback: {e}")
 
@@ -214,7 +245,9 @@ async def get_public_categories_stats(
     )
 
 
-@router.get("/stats/neighborhoods", summary="Public Neighborhood Distribution (Cached 60s)")
+@router.get(
+    "/stats/neighborhoods", summary="Public Neighborhood Distribution (Cached 60s)"
+)
 async def get_public_neighborhoods_stats(
     request: Request,
     db: AsyncSession = Depends(get_read_db),
@@ -230,7 +263,9 @@ async def get_public_neighborhoods_stats(
 
         try:
             db_res = await db.execute(
-                select(Issue.neighborhood, func.count(Issue.id)).group_by(Issue.neighborhood)
+                select(Issue.neighborhood, func.count(Issue.id)).group_by(
+                    Issue.neighborhood
+                )
             )
             for row in db_res.all():
                 counts[str(row[0])] = counts.get(str(row[0]), 0) + row[1]
@@ -247,7 +282,10 @@ async def get_public_neighborhoods_stats(
     )
 
 
-@router.get("/photos/{photo_path:path}", summary="Public Citizen Photo Delivery with EXIF GPS Stripped")
+@router.get(
+    "/photos/{photo_path:path}",
+    summary="Public Citizen Photo Delivery with EXIF GPS Stripped",
+)
 async def get_public_sanitized_photo(photo_path: str) -> Response:
     """Deliver incident photo for public view with EXIF GPS & metadata strictly stripped.
 
@@ -273,4 +311,3 @@ async def get_public_sanitized_photo(photo_path: str) -> Response:
             "X-Privacy-Sanitized": "EXIF-GPS-Stripped",
         },
     )
-

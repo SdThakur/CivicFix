@@ -1,6 +1,7 @@
 """Alembic environment configuration for async SQLAlchemy migrations."""
 
 import asyncio
+import os
 from logging.config import fileConfig
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
@@ -23,7 +24,7 @@ target_metadata = Base.metadata
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode (no DB connection needed)."""
-    url = config.get_main_option("sqlalchemy.url")
+    url = os.getenv("DATABASE_URL") or config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -42,8 +43,13 @@ def do_run_migrations(connection: Connection) -> None:
 
 async def run_async_migrations() -> None:
     """Run migrations in 'online' mode with async engine."""
+    section = config.get_section(config.config_ini_section, {})
+    db_url = os.getenv("DATABASE_URL")
+    if db_url:
+        section["sqlalchemy.url"] = db_url
+
     connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        section,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )

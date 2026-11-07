@@ -54,7 +54,9 @@ class ObservabilityMiddleware(BaseHTTPMiddleware):
             # 3. User Identity Hash (SHA-256 truncated to 16 hex characters)
             raw_user_id = getattr(request.state, "user_id", None)
             if raw_user_id:
-                user_id_hash = hashlib.sha256(str(raw_user_id).encode("utf-8")).hexdigest()[:16]
+                user_id_hash = hashlib.sha256(
+                    str(raw_user_id).encode("utf-8")
+                ).hexdigest()[:16]
             else:
                 user_id_hash = "anonymous"
 
@@ -99,4 +101,3 @@ class ObservabilityMiddleware(BaseHTTPMiddleware):
             # 6. Ensure X-Request-ID is attached to outbound response headers
             if response is not None:
                 response.headers["X-Request-ID"] = request_id
-

@@ -18,8 +18,6 @@ import time
 from typing import Any, Dict, Optional, Tuple
 import uuid
 
-from arq.connections import ArqRedis, RedisSettings
-from app.core.config import settings
 from app.core.queue import get_redis_settings
 from app.core.circuit_breaker import gemini_circuit_breaker, call_with_timeout
 from reports_api import (
@@ -30,7 +28,10 @@ from reports_api import (
 )
 
 logger = logging.getLogger("civicfix.worker")
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
+
 
 # Operational Telemetry Metrics Store
 class WorkerMetrics:
@@ -140,7 +141,9 @@ async def process_report_job(ctx: Dict[str, Any], report_id: str) -> Dict[str, A
     can_execute = await gemini_circuit_breaker.can_execute(redis_client)
     if not can_execute:
         report["status"] = "PENDING_MANUAL"
-        report["error_message"] = "Gemini AI circuit breaker is OPEN. Triaged to dispatcher queue."
+        report["error_message"] = (
+            "Gemini AI circuit breaker is OPEN. Triaged to dispatcher queue."
+        )
         report["updated_at"] = datetime.now(timezone.utc).isoformat()
         metrics.record_failure()
         duration_ms = (time.time() - job_start) * 1000.0
@@ -173,7 +176,9 @@ async def process_report_job(ctx: Dict[str, Any], report_id: str) -> Dict[str, A
             tripped = await gemini_circuit_breaker.record_failure(redis_client)
             if tripped:
                 report["status"] = "PENDING_MANUAL"
-                report["error_message"] = f"Circuit breaker tripped on Gemini error: {gemini_err}. Triaged to dispatcher queue."
+                report["error_message"] = (
+                    f"Circuit breaker tripped on Gemini error: {gemini_err}. Triaged to dispatcher queue."
+                )
                 report["updated_at"] = datetime.now(timezone.utc).isoformat()
                 metrics.record_failure()
                 duration_ms = (time.time() - job_start) * 1000.0
@@ -197,7 +202,9 @@ async def process_report_job(ctx: Dict[str, Any], report_id: str) -> Dict[str, A
         for issue_id, issue in _in_memory_issues.items():
             if issue.get("status") in ("RESOLVED", "CLOSED", "CANCELLED"):
                 continue
-            dist = haversine_distance_meters(report["lat"], report["lng"], issue["lat"], issue["lng"])
+            dist = haversine_distance_meters(
+                report["lat"], report["lng"], issue["lat"], issue["lng"]
+            )
             if dist <= 100.0:
                 matched_issue_id = issue_id
                 break
@@ -207,7 +214,9 @@ async def process_report_job(ctx: Dict[str, Any], report_id: str) -> Dict[str, A
             # Merge duplicate
             issue = _in_memory_issues[matched_issue_id]
             issue["duplicate_count"] = issue.get("duplicate_count", 0) + 1
-            issue["priority_score"] = min(100.0, issue.get("priority_score", 50.0) + 5.0)
+            issue["priority_score"] = min(
+                100.0, issue.get("priority_score", 50.0) + 5.0
+            )
 
             report["is_duplicate"] = True
             report["issue_id"] = matched_issue_id
@@ -224,7 +233,11 @@ async def process_report_job(ctx: Dict[str, Any], report_id: str) -> Dict[str, A
                 duration_ms=round(duration_ms, 2),
                 gemini_wait_ms=round(gemini_wait_ms, 2),
             )
-            return {"status": "DONE", "result": "DUPLICATE", "issue_id": matched_issue_id}
+            return {
+                "status": "DONE",
+                "result": "DUPLICATE",
+                "issue_id": matched_issue_id,
+            }
         else:
             # Create new issue
             new_issue_id = str(uuid.uuid4())
@@ -281,7 +294,10 @@ async def process_report_job(ctx: Dict[str, Any], report_id: str) -> Dict[str, A
 
 async def startup(ctx: Dict[str, Any]) -> None:
     """Worker lifecycle startup hook."""
-    logger.info("CivicFix ARQ Worker starting up. Concurrency: %s", os.getenv("WORKER_CONCURRENCY", "10"))
+    logger.info(
+        "CivicFix ARQ Worker starting up. Concurrency: %s",
+        os.getenv("WORKER_CONCURRENCY", "10"),
+    )
     # Reset local gemini concurrency semaphore if freshly starting
     redis_client = ctx.get("redis")
     if redis_client:
@@ -290,7 +306,9 @@ async def startup(ctx: Dict[str, Any]) -> None:
 
 async def shutdown(ctx: Dict[str, Any]) -> None:
     """Worker lifecycle graceful shutdown hook."""
-    logger.info("CivicFix ARQ Worker shutting down gracefully. In-flight jobs completing...")
+    logger.info(
+        "CivicFix ARQ Worker shutting down gracefully. In-flight jobs completing..."
+    )
     redis_client = ctx.get("redis")
     if redis_client:
         await redis_client.set("gemini:active_concurrency", 0)
@@ -309,5 +327,5 @@ class WorkerSettings:
 
 if __name__ == "__main__":
     from arq import run_worker
-    run_worker(WorkerSettings)
 
+    run_worker(WorkerSettings)
