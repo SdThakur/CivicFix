@@ -126,3 +126,4 @@ CREATE TRIGGER trg_sync_issue_compatibility
     BEFORE INSERT OR UPDATE ON public.issues
     FOR EACH ROW
     EXECUTE FUNCTION public.sync_issue_compatibility_fields();
+
