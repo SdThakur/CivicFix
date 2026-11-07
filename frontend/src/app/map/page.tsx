@@ -20,6 +20,7 @@ import {
   ArrowUpDown
 } from 'lucide-react';
 import { issueApi, reportApi } from '@/lib/api';
+import { useIssuesInBounds } from '@/lib/supabase/queries';
 import type { Issue } from '@/types';
 import StatusBadge from '@/components/ui/StatusBadge';
 import EmptyState from '@/components/ui/EmptyState';
@@ -65,6 +66,55 @@ function MapPageContent() {
 
   // 2. Mobile Draggable Bottom Sheet State ('peek' | 'half' | 'full')
   const [sheetState, setSheetState] = useState<'peek' | 'half' | 'full'>('peek');
+
+  // Supabase RPC Viewport Bounds Loading (debounced on map idle)
+  const [viewportBounds, setViewportBounds] = useState<{
+    minLat: number;
+    maxLat: number;
+    minLng: number;
+    maxLng: number;
+  } | null>(null);
+
+  const { data: boundedIssues } = useIssuesInBounds({
+    minLat: viewportBounds?.minLat ?? 38.5,
+    maxLat: viewportBounds?.maxLat ?? 39.5,
+    minLng: viewportBounds?.minLng ?? -77.5,
+    maxLng: viewportBounds?.maxLng ?? -76.0,
+    categoryFilter: selectedCategory !== 'ALL' ? selectedCategory : null,
+    statusFilter: selectedStatus !== 'ALL' ? selectedStatus : null,
+    enabled: Boolean(viewportBounds),
+  });
+
+  useEffect(() => {
+    if (boundedIssues && boundedIssues.length > 0) {
+      setIssues(
+        boundedIssues.map((b: any) => ({
+          id: b.id,
+          title: b.title,
+          category: b.category,
+          status: b.status as any,
+          severity: (b.priority_level === 'URGENT' ? 'CRITICAL' : (b.priority_level || 'MEDIUM')) as any,
+          location_id: b.id,
+          location: {
+            id: b.id,
+            latitude: b.lat,
+            longitude: b.lng,
+            address: b.address || '',
+            neighborhood: b.neighborhood || '',
+          },
+          priority: b.priority_level || 'MEDIUM',
+          latitude: b.lat,
+          longitude: b.lng,
+          address: b.address || '',
+          neighborhood: b.neighborhood || '',
+          report_count: b.duplicate_count ? b.duplicate_count + 1 : 1,
+          created_at: b.created_at,
+          updated_at: b.created_at,
+          priority_score: b.priority_score || 50,
+        })) as any
+      );
+    }
+  }, [boundedIssues]);
 
   const fetchIssues = useCallback(async () => {
     setLoading(true);
@@ -206,108 +256,120 @@ function MapPageContent() {
   };
 
   return (
-    <div className="space-y-4 py-3 sm:py-6">
-      
-      {/* Top Header Card */}
-      <div className="surface-card-solid p-5 sm:p-6 rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border border-surface-border">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-md-red inline-block" />
-            <span className="text-xs font-bold text-md-red uppercase tracking-wider">
-              Live Geospatial Dispatch
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-content-primary tracking-tight font-display">
-            Public Infrastructure City Map
-          </h1>
-          <p className="text-xs text-content-secondary mt-1">
-            Real-time geospatial visualization of road hazards, work orders, and verified repairs.
-          </p>
-        </div>
+    <div className="space-y-3 py-4 sm:py-8">
+      <div className="flex-1 flex flex-col min-h-0 space-y-2.5 h-full overflow-hidden">
+        {/* Top Header Card — Styled to match Landing Page Hero aesthetics */}
+        <div className="surface-card-solid p-6 sm:p-10 lg:p-12 relative overflow-hidden rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-surface-border shadow-card flex-shrink-0">
+          {/* Subtle Maryland Accent Top Edge Stripe */}
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-md-red via-md-gold to-md-red" />
 
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Accessible List / Map View Toggle */}
-          <div className="flex items-center rounded-xl bg-neutral-black-06 p-1 border border-surface-border" role="group" aria-label="View Mode">
+          {/* Ambient Top-Right Spill */}
+          <div 
+            className="absolute -top-16 -right-16 w-[420px] h-[300px] pointer-events-none rounded-tr-3xl"
+            style={{
+              background: 'radial-gradient(circle at 80% 20%, rgba(255, 199, 44, 0.12) 0%, rgba(224, 58, 62, 0.04) 40%, transparent 70%)',
+            }}
+            aria-hidden="true"
+          />
+
+          <div className="space-y-2 z-10 text-left">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-gold text-xs font-bold tracking-tight shadow-sm text-md-black">
+              <span className="w-2 h-2 rounded-full bg-md-red animate-pulse" />
+              <span>Live Geospatial Operations Standard</span>
+            </div>
+
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-content-primary tracking-tight font-display leading-[1.15]">
+              Public Infrastructure <span className="text-md-red">City Map</span>
+            </h1>
+
+            <p className="text-xs sm:text-sm text-content-secondary max-w-xl font-normal leading-relaxed">
+              Real-time geospatial radar of road hazards, work orders, cluster density, and verified repairs.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 flex-wrap z-10">
+            {/* Accessible List / Map View Toggle */}
+            <div className="flex items-center rounded-2xl bg-neutral-black-06 p-1 border border-surface-border" role="group" aria-label="View Mode">
+              <button
+                onClick={() => setViewMode('map')}
+                className={`min-h-[40px] px-4 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                  viewMode === 'map'
+                    ? 'bg-white text-md-black shadow-sm font-black'
+                    : 'text-content-secondary hover:text-content-primary'
+                }`}
+                aria-pressed={viewMode === 'map'}
+              >
+                <MapIcon className="w-4 h-4" />
+                <span>Map View</span>
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`min-h-[40px] px-4 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                  viewMode === 'list'
+                    ? 'bg-white text-md-black shadow-sm font-black'
+                    : 'text-content-secondary hover:text-content-primary'
+                }`}
+                aria-pressed={viewMode === 'list'}
+              >
+                <List className="w-4 h-4" />
+                <span>Accessible List</span>
+              </button>
+            </div>
+
             <button
-              onClick={() => setViewMode('map')}
-              className={`min-h-[40px] px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
-                viewMode === 'map'
-                  ? 'bg-white text-md-black shadow-sm font-black'
-                  : 'text-content-secondary hover:text-content-primary'
-              }`}
-              aria-pressed={viewMode === 'map'}
+              onClick={fetchIssues}
+              disabled={loading}
+              className="min-h-[44px] min-w-[44px] px-4 py-2 rounded-2xl liquid-glass-surface specular-edge text-content-primary hover:bg-neutral-black-06 active:scale-95 transition-all flex items-center gap-2 border border-surface-border text-xs font-bold"
+              title="Refresh map incidents"
+              aria-label="Refresh incident feed"
             >
-              <MapIcon className="w-3.5 h-3.5" />
-              <span>Map View</span>
+              <RefreshCw className={`w-4 h-4 text-content-primary ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Refresh</span>
             </button>
+            
+            <div className="px-4 py-2 rounded-2xl bg-neutral-black-06 border border-surface-border text-xs font-bold text-content-primary flex items-center gap-1.5">
+              <span className="text-md-red font-black text-sm">{mappableIssues.length}</span> Mapped
+            </div>
+          </div>
+        </div>
+
+        {/* Floating Filter Pills Bar in Concentric Glass */}
+        <div className="p-1.5 rounded-2xl liquid-glass-surface specular-edge border border-surface-border flex items-center gap-2 overflow-x-auto no-scrollbar flex-shrink-0 shadow-sm">
+          <div className="flex items-center gap-1.5 pl-2.5 pr-1 text-content-secondary text-xs font-bold flex-shrink-0">
+            <Filter className="w-3.5 h-3.5 text-content-primary" />
+            <span>Category:</span>
+          </div>
+
+          {CATEGORY_FILTERS.map((cat) => (
             <button
-              onClick={() => setViewMode('list')}
-              className={`min-h-[40px] px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
-                viewMode === 'list'
-                  ? 'bg-white text-md-black shadow-sm font-black'
-                  : 'text-content-secondary hover:text-content-primary'
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`min-h-[44px] px-4 text-xs font-bold rounded-xl transition-all whitespace-nowrap flex items-center justify-center ${
+                selectedCategory === cat
+                  ? 'liquid-glass-gold shadow-sm font-black text-md-black'
+                  : 'text-content-secondary hover:text-content-primary hover:bg-neutral-black-06'
               }`}
-              aria-pressed={viewMode === 'list'}
             >
-              <List className="w-3.5 h-3.5" />
-              <span>Accessible List</span>
+              {cat}
             </button>
-          </div>
+          ))}
 
-          <button
-            onClick={fetchIssues}
-            disabled={loading}
-            className="min-h-[44px] min-w-[44px] px-3.5 py-2 rounded-xl liquid-glass-surface specular-edge text-content-primary hover:bg-neutral-black-06 active:scale-95 transition-all flex items-center gap-2 border border-surface-border text-xs font-bold"
-            title="Refresh map incidents"
-            aria-label="Refresh incident feed"
-          >
-            <RefreshCw className={`w-4 h-4 text-content-primary ${loading ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Refresh</span>
-          </button>
-          
-          <div className="px-3.5 py-2 rounded-xl bg-neutral-black-06 border border-surface-border text-xs font-bold text-content-primary">
-            <span className="text-md-red font-black">{mappableIssues.length}</span> Mapped
-          </div>
+          <div className="h-6 w-px bg-surface-border mx-1 flex-shrink-0" />
+
+          {STATUS_FILTERS.map((s) => (
+            <button
+              key={s}
+              onClick={() => setSelectedStatus(s)}
+              className={`min-h-[44px] px-3.5 text-xs font-semibold rounded-xl transition-all whitespace-nowrap flex items-center justify-center ${
+                selectedStatus === s
+                  ? 'btn-md-red text-white font-bold shadow-sm'
+                  : 'text-content-muted hover:text-content-primary hover:bg-neutral-black-06'
+              }`}
+            >
+              {s === 'ALL' ? 'All Status' : s.replace('_', ' ')}
+            </button>
+          ))}
         </div>
-      </div>
-
-      {/* Floating Filter Pills Bar in Concentric Glass (Limited Backdrop-Filter) */}
-      <div className="p-1.5 rounded-2xl liquid-glass-surface specular-edge border border-surface-border flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-        <div className="flex items-center gap-1 pl-2 pr-1 text-content-secondary text-xs font-bold flex-shrink-0">
-          <Filter className="w-3.5 h-3.5 text-content-primary" />
-          <span>Category:</span>
-        </div>
-
-        {CATEGORY_FILTERS.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setSelectedCategory(cat)}
-            className={`min-h-[44px] px-3.5 text-xs font-bold rounded-xl transition-all whitespace-nowrap flex items-center justify-center ${
-              selectedCategory === cat
-                ? 'liquid-glass-gold shadow-sm font-black text-md-black'
-                : 'text-content-secondary hover:text-content-primary hover:bg-neutral-black-06'
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
-
-        <div className="h-5 w-px bg-surface-border mx-1 flex-shrink-0" />
-
-        {STATUS_FILTERS.map((s) => (
-          <button
-            key={s}
-            onClick={() => setSelectedStatus(s)}
-            className={`min-h-[44px] px-3 text-xs font-semibold rounded-xl transition-all whitespace-nowrap flex items-center justify-center ${
-              selectedStatus === s
-                ? 'btn-md-red text-white font-bold shadow-sm'
-                : 'text-content-muted hover:text-content-primary hover:bg-neutral-black-06'
-            }`}
-          >
-            {s === 'ALL' ? 'All Status' : s.replace('_', ' ')}
-          </button>
-        ))}
-      </div>
 
       {/* Error Banner */}
       {error && (
@@ -334,8 +396,8 @@ function MapPageContent() {
       {/* VIEW MODE 1: ACCESSIBLE LIST VIEW (FULL ALTERNATIVE TO MAP)               */}
       {/* ========================================================================= */}
       {viewMode === 'list' ? (
-        <section className="surface-card-solid p-6 rounded-3xl border border-surface-border space-y-5" aria-label="Accessible Incident Directory">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-surface-border pb-4">
+        <section className="flex-1 min-h-0 surface-card-solid p-4 sm:p-5 rounded-2xl border border-surface-border flex flex-col overflow-hidden space-y-3.5" aria-label="Accessible Incident Directory">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-surface-border pb-3 flex-shrink-0">
             <div className="relative flex-1 max-w-md">
               <Search className="w-4 h-4 text-content-muted absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -372,7 +434,7 @@ function MapPageContent() {
               onAction={() => { setSearchQuery(''); setSelectedCategory('ALL'); setSelectedStatus('ALL'); }}
             />
           ) : (
-            <div className="overflow-x-auto">
+            <div className="flex-1 min-h-0 overflow-auto pr-1">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-surface-border text-content-muted uppercase tracking-wider font-bold">
@@ -432,7 +494,7 @@ function MapPageContent() {
         /* ========================================================================= */
         /* VIEW MODE 2: MAP VIEW (DESKTOP 2/3 + 1/3, MOBILE FULL MAP + BOTTOM SHEET) */
         /* ========================================================================= */
-        <div className="relative h-[calc(100vh-14rem)] min-h-[550px] md:h-[680px]">
+        <div className="flex-1 min-h-0 relative">
           
           {/* Main Desktop Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 h-full">
@@ -442,6 +504,7 @@ function MapPageContent() {
               <GoogleMapView
                 issues={mappableIssues}
                 selectedIssue={selectedIssue}
+                onBoundsChange={setViewportBounds}
                 onSelectIssue={(issue) => {
                   setSelectedIssue(issue);
                   // On mobile, snap to peek so user sees the pin
@@ -454,18 +517,20 @@ function MapPageContent() {
               />
             </div>
 
-            {/* Desktop Persistent Sidebar (1 col) - Hidden on mobile */}
-            <div className="hidden lg:flex surface-card-solid p-5 flex-col h-full rounded-3xl border border-surface-border">
-              <div className="flex items-center justify-between border-b border-surface-border pb-3 mb-3">
+            {/* Desktop Persistent Sidebar (1 col) - The solitary scrolling feed container */}
+            <div className="hidden lg:flex surface-card-solid p-5 flex-col h-full rounded-3xl border border-surface-border shadow-card min-h-0">
+              <div className="flex items-center justify-between border-b border-surface-border pb-3 mb-3 flex-shrink-0">
                 <span className="text-xs font-black text-content-primary uppercase tracking-wider">
-                  {loading ? 'Loading...' : `${mappableIssues.length} Incidents Found`}
+                  {loading ? 'Scanning Cluster...' : `${mappableIssues.length} Incidents Found`}
                 </span>
-                <span className="text-[11px] font-bold text-md-red">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-md-red-subtle text-[11px] font-bold text-md-red">
+                  <span className="w-1.5 h-1.5 rounded-full bg-md-red animate-pulse" />
                   Live Feed
                 </span>
               </div>
 
-              <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+              {/* Incidents feed container - SCROLLS INTERNALLY */}
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1.5">
                 {loading ? (
                   Array.from({ length: 4 }).map((_, i) => (
                     <div key={i} className="p-4 rounded-2xl bg-surface-card-subtle border border-surface-border animate-pulse space-y-2">
@@ -620,6 +685,7 @@ function MapPageContent() {
         </div>
       )}
 
+      </div>
     </div>
   );
 }

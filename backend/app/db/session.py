@@ -9,12 +9,20 @@ from sqlalchemy.ext.asyncio import (
 from app.core.config import settings
 
 is_sqlite = settings.SQLALCHEMY_DATABASE_URI.startswith("sqlite")
-connect_args = {"check_same_thread": False} if is_sqlite else {}
+if is_sqlite:
+    connect_args = {"check_same_thread": False}
+else:
+    # Supabase Transaction Pooler (port 6543) requires statement_cache_size=0 with asyncpg
+    connect_args = {
+        "statement_cache_size": 0,
+        "prepared_statement_cache_size": 0,
+    }
 
 engine = create_async_engine(
     settings.SQLALCHEMY_DATABASE_URI,
     echo=False,
     pool_pre_ping=True,
+    pool_recycle=300,
     connect_args=connect_args,
 )
 

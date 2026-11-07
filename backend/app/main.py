@@ -70,6 +70,12 @@ api_prefix = settings.API_V1_STR
 
 # ─── Existing Core Routes ────────────────────────────────────────────────────
 app.include_router(auth.router, prefix=api_prefix)
+
+# Feature-flagged Asynchronous Reports Ingestion Pipeline
+if getattr(settings, "NEXT_PUBLIC_ASYNC_REPORTS", True):
+    from app.api import reports_api
+    app.include_router(reports_api.router, prefix=api_prefix)
+
 app.include_router(reports.router, prefix=api_prefix)
 app.include_router(issues.router, prefix=api_prefix)
 app.include_router(work_orders.router, prefix=api_prefix)

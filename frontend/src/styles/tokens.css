@@ -46,8 +46,8 @@
   /* ------------------------------------------------------------------------
      3. Light Theme (Default: White Dominant ~60%)
      ------------------------------------------------------------------------ */
-  --surface-canvas: var(--md-white);
-  --surface-canvas-subtle: var(--md-white-warm);
+  --surface-canvas: var(--md-white-warm);
+  --surface-canvas-subtle: #f8f5ec;
   --surface-card: var(--md-white);
   --surface-card-subtle: var(--md-white-warm);
   --surface-card-hover: #faf8f2;
@@ -105,15 +105,20 @@
   --scroll-edge-fade-bottom: linear-gradient(to top, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%);
 
   /* ------------------------------------------------------------------------
-     4. Atmospheric Drifting Mesh Background Variables
-     Positioned off-center; slow 65s+ continuous drift
+     4. Atmospheric Drifting Mesh Background Variables (Maryland Sunset Atmosphere)
+     Positioned off-center; slow continuous organic drift
      ------------------------------------------------------------------------ */
-  --mesh-gold-blob: radial-gradient(circle at 85% 15%, rgba(255, 199, 44, 0.14) 0%, rgba(255, 199, 44, 0) 55%);
-  --mesh-red-blob: radial-gradient(circle at 15% 85%, rgba(224, 58, 62, 0.10) 0%, rgba(224, 58, 62, 0) 50%);
+  --mesh-red-top: radial-gradient(circle at 70% 30%, rgba(224, 58, 62, 0.22) 0%, rgba(255, 107, 85, 0.15) 38%, rgba(224, 58, 62, 0) 70%);
+  --mesh-gold-top: radial-gradient(circle at 50% 50%, rgba(255, 199, 44, 0.26) 0%, rgba(255, 180, 20, 0.12) 42%, rgba(255, 199, 44, 0) 70%);
+  --mesh-bottom-ambient: radial-gradient(circle at 40% 60%, rgba(224, 58, 62, 0.08) 0%, rgba(255, 199, 44, 0.08) 40%, transparent 70%);
   --mesh-drift-duration: 65s;
 
-  /* Subtle Quartered Maryland Flag Heritage Motif (Faint watermark < 6%) */
-  --md-motif-opacity: 0.035;
+  /* Subtle Quartered Maryland Flag Heritage Motif (Faint watermark on left flank) */
+  --md-motif-opacity: 0.055;
+
+  /* Cursor Ambient Tracking Tokens */
+  --cursor-ambient-gold: rgba(255, 199, 44, 0.10);
+  --cursor-ambient-red: rgba(224, 58, 62, 0.05);
 
   /* ------------------------------------------------------------------------
      5. Concentric Radii & Touch Targets
@@ -145,7 +150,7 @@
      7. Spring Motion Curves
      Apple-style short, interruptible, physical response
      ------------------------------------------------------------------------ */
-  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.15);
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-liquid: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
 
@@ -236,8 +241,12 @@ html.dark,
   --scroll-edge-fade: linear-gradient(to bottom, rgba(11, 11, 12, 1) 0%, rgba(11, 11, 12, 0) 100%);
   --scroll-edge-fade-bottom: linear-gradient(to top, rgba(11, 11, 12, 1) 0%, rgba(11, 11, 12, 0) 100%);
 
-  --mesh-gold-blob: radial-gradient(circle at 85% 15%, rgba(255, 199, 44, 0.08) 0%, rgba(255, 199, 44, 0) 55%);
-  --mesh-red-blob: radial-gradient(circle at 15% 85%, rgba(224, 58, 62, 0.06) 0%, rgba(224, 58, 62, 0) 50%);
+  --mesh-red-top: radial-gradient(circle at 70% 30%, rgba(224, 58, 62, 0.12) 0%, rgba(224, 58, 62, 0) 70%);
+  --mesh-gold-top: radial-gradient(circle at 50% 50%, rgba(255, 199, 44, 0.14) 0%, rgba(255, 199, 44, 0) 70%);
+  --mesh-bottom-ambient: radial-gradient(circle at 40% 60%, rgba(255, 255, 255, 0.03) 0%, transparent 70%);
+
+  --cursor-ambient-gold: rgba(255, 199, 44, 0.05);
+  --cursor-ambient-red: rgba(255, 255, 255, 0.03);
 
   --selection-bg: rgba(255, 199, 44, 0.35);
   --selection-text: var(--md-white);

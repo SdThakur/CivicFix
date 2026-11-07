@@ -11,6 +11,7 @@ interface GoogleMapViewProps {
   issues: Issue[];
   selectedIssue: Issue | null;
   onSelectIssue: (issue: Issue | null) => void;
+  onBoundsChange?: (bounds: { minLat: number; maxLat: number; minLng: number; maxLng: number }) => void;
   initialCenter?: { lat: number; lng: number } | null;
   compact?: boolean;
   className?: string;
@@ -51,6 +52,7 @@ export default function GoogleMapView({
   issues,
   selectedIssue,
   onSelectIssue,
+  onBoundsChange,
   initialCenter,
   compact = false,
   className,
@@ -89,6 +91,7 @@ export default function GoogleMapView({
           zoom: initZoom,
           styles: isDarkMode ? DARK_MAP_STYLES : LIGHT_MAP_STYLES,
           disableDefaultUI: compact,
+          gestureHandling: 'greedy', // Captures scrollwheel/gestures on the map without scrolling the parent page
           zoomControl: !compact,
           zoomControlOptions: {
             position: googleInstance.maps.ControlPosition.RIGHT_BOTTOM,
@@ -109,6 +112,21 @@ export default function GoogleMapView({
           const currentZoom = map.getZoom();
           if (typeof currentZoom === 'number') {
             setZoomLevel(currentZoom);
+          }
+        });
+
+        // Listen for viewport idle to trigger debounced bounded RPC fetching
+        map.addListener('idle', () => {
+          const b = map.getBounds();
+          if (b && onBoundsChange) {
+            const ne = b.getNorthEast();
+            const sw = b.getSouthWest();
+            onBoundsChange({
+              minLat: sw.lat(),
+              maxLat: ne.lat(),
+              minLng: sw.lng(),
+              maxLng: ne.lng(),
+            });
           }
         });
 
