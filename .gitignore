@@ -233,6 +233,9 @@ celerybeat.pid
 
 # Task runner artifacts (used during Antigravity sessions)
 task.md
+.gemini/
+.impeccable/
+.agent/
 
 # Rope (Python refactoring)
 .ropeproject/

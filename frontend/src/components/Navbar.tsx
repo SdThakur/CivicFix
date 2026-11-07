@@ -14,20 +14,22 @@ import {
   LogOut, 
   Menu, 
   X,
-  Bell,
   ClipboardList,
   HardHat,
   Wrench,
   Shield,
   Database,
   Eye,
-  Hammer,
   Users
 } from 'lucide-react';
+import TranslucencyPicker from '@/components/glass/TranslucencyPicker';
+import LanguagePicker from '@/components/ui/LanguagePicker';
+import { useI18n } from '@/lib/i18n';
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { t } = useI18n();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -50,14 +52,14 @@ export default function Navbar() {
   };
 
   const navLinks = [
-    { href: '/', label: 'Home' },
-    { href: '/map', label: 'Public Map', icon: MapPin },
-    { href: '/report', label: 'Report Problem', icon: PlusCircle, highlight: true },
+    { href: '/', label: t('nav.home') },
+    { href: '/map', label: t('nav.map'), icon: MapPin },
+    { href: '/report', label: t('nav.report'), icon: PlusCircle, isCta: true },
   ];
 
   if (currentUser) {
     if (currentUser.role === 'CITIZEN') {
-      navLinks.push({ href: '/dashboard', label: 'My Reports', icon: LayoutDashboard });
+      navLinks.push({ href: '/dashboard', label: t('nav.dashboard'), icon: LayoutDashboard });
     } else if (currentUser.role === 'FIELD_WORKER') {
       navLinks.push({ href: '/field-worker', label: 'My Jobs', icon: HardHat });
     } else if (currentUser.role === 'INSPECTOR') {
@@ -74,44 +76,47 @@ export default function Navbar() {
       navLinks.push({ href: '/assistant', label: 'AI Assistant', icon: Bot });
     }
   }
-  // Public transparency always available
-  navLinks.push({ href: '/transparency', label: 'Transparency', icon: Eye });
+
+  navLinks.push({ href: '/transparency', label: t('nav.transparency'), icon: Eye });
 
   return (
-    <header className="sticky top-0 z-50 glass-panel border-b border-white/10 shadow-[0_0_20px_rgba(0,242,255,0.1)]">
+    <header className="sticky top-0 z-50 liquid-glass-surface specular-edge border-b border-surface-border backdrop-blur-[24px]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-16 sm:h-20">
           
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:scale-105 transition-transform shadow-[0_0_15px_rgba(0,242,255,0.2)]">
-              <ShieldAlert className="w-6 h-6" />
+          {/* Logo with Maryland Heraldic Accent */}
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 rounded-xl bg-md-red text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+              <ShieldAlert className="w-5 h-5 text-white" />
             </div>
             <div className="flex flex-col">
-              <span className="font-extrabold text-xl tracking-tight text-white flex items-center gap-1 font-display-lg">
-                Civic<span className="text-cyan-400">Fix</span>
-              </span>
-              <span className="text-[10px] text-cyan-400/80 font-mono font-bold tracking-wider uppercase">
-                Mission Control Ops
+              <div className="flex items-center gap-1">
+                <span className="font-extrabold text-xl tracking-tight text-content-primary font-display">
+                  Civic<span className="text-md-red">Fix</span>
+                </span>
+                <span className="w-2 h-2 rounded-full bg-md-gold inline-block" />
+              </div>
+              <span className="text-[10px] text-content-secondary font-semibold tracking-wider uppercase">
+                Public Infrastructure
               </span>
             </div>
           </Link>
 
-          {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-1">
+          {/* Desktop Grouped Glass Navigation Bar */}
+          <nav className="hidden md:flex items-center gap-1.5 p-1 rounded-2xl bg-neutral-black-03 border border-surface-border">
             {navLinks.map((link) => {
               const Icon = link.icon;
               const isActive = pathname === link.href;
 
-              if (link.highlight) {
+              if (link.isCta) {
                 return (
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="ml-2 px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-mono font-bold text-xs flex items-center gap-2 shadow-[0_0_15px_rgba(0,242,255,0.3)] transition-all hover:shadow-[0_0_25px_rgba(0,242,255,0.5)] hover:-translate-y-0.5"
+                    className="min-h-[44px] ml-1 px-4 py-2 rounded-xl btn-md-red text-xs font-bold flex items-center gap-2 shadow-sm"
                   >
-                    {Icon && <Icon className="w-4 h-4" />}
-                    {link.label}
+                    {Icon && <Icon className="w-4 h-4 text-white" />}
+                    <span>{link.label}</span>
                   </Link>
                 );
               }
@@ -120,33 +125,36 @@ export default function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`px-3 py-2 rounded-xl text-xs font-mono transition-colors flex items-center gap-1.5 ${
+                  className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
                     isActive
-                      ? 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 shadow-[0_0_10px_rgba(0,242,255,0.15)] font-bold'
-                      : 'text-slate-300 hover:text-white hover:bg-white/[0.05]'
+                      ? 'liquid-glass-gold shadow-sm font-bold'
+                      : 'text-content-secondary hover:text-content-primary hover:bg-neutral-black-06'
                   }`}
                 >
-                  {Icon && <Icon className="w-4 h-4 text-cyan-400/80" />}
-                  {link.label}
+                  {Icon && <Icon className="w-3.5 h-3.5 text-content-primary" />}
+                  <span>{link.label}</span>
                 </Link>
               );
             })}
           </nav>
 
-          {/* Right Action Items */}
-          <div className="hidden md:flex items-center gap-3">
+          {/* Right Action Items & Preferences */}
+          <div className="hidden md:flex items-center gap-2.5">
+            <LanguagePicker />
+            <TranslucencyPicker />
+
             {currentUser ? (
-              <div className="flex items-center gap-3 border-l border-slate-800 pl-3">
+              <div className="flex items-center gap-3 border-l border-surface-border pl-3">
                 <div className="flex flex-col text-right">
-                  <span className="text-sm font-medium text-slate-200">{currentUser.full_name || currentUser.email}</span>
-                  <span className="text-[11px] text-blue-400 font-semibold tracking-wider uppercase">
+                  <span className="text-xs font-bold text-content-primary">{currentUser.full_name || currentUser.email}</span>
+                  <span className="text-[10px] text-md-red font-bold tracking-wider uppercase">
                     {currentUser.role}
                   </span>
                 </div>
                 <button
                   onClick={handleLogout}
                   title="Logout"
-                  className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                  className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl text-content-secondary hover:text-md-red hover:bg-neutral-black-06 transition-colors flex items-center justify-center"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -155,13 +163,13 @@ export default function Navbar() {
               <div className="flex items-center gap-2">
                 <Link
                   href="/login"
-                  className="px-3.5 py-2 text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 rounded-lg transition-colors"
+                  className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold text-content-primary hover:bg-neutral-black-06 transition-colors flex items-center justify-center"
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/register"
-                  className="px-3.5 py-2 text-sm font-medium bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 rounded-lg transition-colors"
+                  className="min-h-[44px] px-4 py-2 rounded-xl btn-md-gold text-xs font-bold flex items-center justify-center shadow-sm"
                 >
                   Register
                 </Link>
@@ -169,11 +177,13 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Menu & Settings Button */}
           <div className="flex md:hidden items-center gap-2">
+            <TranslucencyPicker />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg text-slate-300 hover:bg-slate-800 transition-colors"
+              className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl text-content-primary hover:bg-neutral-black-06 active:scale-95 transition-all flex items-center justify-center"
+              aria-label="Toggle menu"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -181,118 +191,72 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Drawer Sheet */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-b border-slate-800 bg-[#0f172a] px-4 pt-2 pb-6 overflow-y-auto max-h-[calc(100vh-4rem)]">
-          {!currentUser || currentUser.role === 'CITIZEN' ? (
-            <div className="space-y-1">
-              {navLinks.map((link) => {
-                const Icon = link.icon;
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-base font-medium text-slate-200 hover:bg-slate-800"
-                  >
-                    {Icon && <Icon className="w-5 h-5 text-slate-400" />}
-                    {link.label}
-                  </Link>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="space-y-6 mt-2">
-              <div className="space-y-2">
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider px-3">Operations</div>
-                <div className="space-y-1">
-                  <Link href="/service-requests" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-slate-800">
-                    <Shield className="w-4 h-4 text-slate-400" /> 311 Dispatch
-                  </Link>
-                  <Link href="/inspections" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-slate-800">
-                    <ClipboardList className="w-4 h-4 text-slate-400" /> Inspections
-                  </Link>
-                  <Link href="/employee" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-slate-800">
-                    <LayoutDashboard className="w-4 h-4 text-slate-400" /> Operations Queue
-                  </Link>
-                </div>
-              </div>
+        <div className="md:hidden border-t border-surface-border bg-surface-card px-4 pt-3 pb-6 space-y-3 animate-in slide-in-from-top-4 duration-fast">
+          <nav className="flex flex-col gap-1.5">
+            {navLinks.map((link) => {
+              const Icon = link.icon;
+              const isActive = pathname === link.href;
 
-              <div className="space-y-2">
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider px-3">Field Operations</div>
-                <div className="space-y-1">
-                  <Link href="/field-worker" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-slate-800">
-                    <HardHat className="w-4 h-4 text-slate-400" /> My Jobs
-                  </Link>
-                  <Link href="/crews" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-slate-800">
-                    <Users className="w-4 h-4 text-slate-400" /> Crews
-                  </Link>
-                  <Link href="/assets" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-slate-800">
-                    <Database className="w-4 h-4 text-slate-400" /> Assets
-                  </Link>
-                </div>
-              </div>
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`min-h-[44px] px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2.5 ${
+                    link.isCta
+                      ? 'btn-md-red text-white'
+                      : isActive
+                      ? 'liquid-glass-gold font-bold'
+                      : 'text-content-secondary hover:text-content-primary hover:bg-neutral-black-06'
+                  }`}
+                >
+                  {Icon && <Icon className="w-4 h-4" />}
+                  <span>{link.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
 
-              <div className="space-y-2">
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider px-3">Analytics & Strategy</div>
-                <div className="space-y-1">
-                  <Link href="/admin" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-slate-800">
-                    <BarChart3 className="w-4 h-4 text-slate-400" /> Analytics
-                  </Link>
-                  <Link href="/preventive" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-slate-800">
-                    <Wrench className="w-4 h-4 text-slate-400" /> Preventive Maintenance
-                  </Link>
-                  <Link href="/assistant" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-slate-800">
-                    <Bot className="w-4 h-4 text-blue-400" /> AI Assistant
-                  </Link>
-                </div>
-              </div>
+          <div className="pt-3 border-t border-surface-border space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-xs font-bold text-content-secondary">Language:</span>
+              <LanguagePicker />
+            </div>
 
-              <div className="space-y-2">
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider px-3">Civic</div>
-                <div className="space-y-1">
-                  <Link href="/map" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-slate-800">
-                    <MapPin className="w-4 h-4 text-slate-400" /> Public Map
-                  </Link>
-                  <Link href="/transparency" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-200 hover:bg-slate-800">
-                    <Eye className="w-4 h-4 text-slate-400" /> Transparency
-                  </Link>
+            {currentUser ? (
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-bold text-content-primary">{currentUser.full_name}</div>
+                  <div className="text-xs text-md-red font-semibold">{currentUser.role}</div>
                 </div>
+                <button
+                  onClick={handleLogout}
+                  className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold text-md-red hover:bg-neutral-black-06"
+                >
+                  Log Out
+                </button>
               </div>
-            </div>
-          )}
-
-          {currentUser ? (
-            <div className="mt-6 pt-4 border-t border-slate-800">
-              <div className="px-3 mb-2">
-                <div className="text-sm font-medium text-white">{currentUser.full_name || currentUser.email}</div>
-                <div className="text-xs text-blue-400 font-semibold">{currentUser.role}</div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="min-h-[44px] py-2 rounded-xl text-center text-xs font-bold text-content-primary bg-neutral-black-06 flex items-center justify-center"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="min-h-[44px] py-2 rounded-xl text-center text-xs font-bold btn-md-gold flex items-center justify-center shadow-sm"
+                >
+                  Register
+                </Link>
               </div>
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-rose-400 hover:bg-rose-500/10"
-              >
-                <LogOut className="w-4 h-4" /> Logout
-              </button>
-            </div>
-          ) : (
-            <div className="pt-6 mt-2 border-t border-slate-800 flex flex-col gap-3">
-              <Link
-                href="/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full text-center px-4 py-3 rounded-xl text-sm font-bold text-slate-200 bg-slate-800"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/register"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full text-center px-4 py-3 rounded-xl text-sm font-bold text-white bg-blue-600"
-              >
-                Register
-              </Link>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
     </header>

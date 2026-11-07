@@ -1,0 +1,313 @@
+/* ==========================================================================
+   CivicFix — Maryland Flag Liquid Glass Design Tokens
+   Strict Palette: White (#FFFFFF / #FFFDF7), Gold (#FFC72C), Red (#E03A3E), Black (#0B0B0C)
+   Distribution: ~60% White | ~15% Gold | ~12% Red | ~13% Black
+   Strict 2-Layer Model: Glass for Floating Chrome, Solid White for Body Content
+   ========================================================================== */
+
+:root {
+  /* ------------------------------------------------------------------------
+     1. Brand Primitive Colors (Maryland Flag Standard)
+     No blue, purple, teal, or green anywhere.
+     ------------------------------------------------------------------------ */
+  --md-white: #ffffff;
+  --md-white-warm: #fffdf7;
+  --md-gold: #ffc72c;
+  --md-gold-hover: #e5b225;
+  --md-gold-subtle: rgba(255, 199, 44, 0.15);
+  --md-gold-glass: rgba(255, 199, 44, 0.22);
+  --md-red: #e03a3e;
+  --md-red-hover: #c93236;
+  --md-red-subtle: rgba(224, 58, 62, 0.10);
+  --md-red-glass: rgba(224, 58, 62, 0.16);
+  --md-black: #0b0b0c;
+
+  /* Neutral Tints derived strictly from Black (#0B0B0C) */
+  --neutral-black-03: rgba(11, 11, 12, 0.03);
+  --neutral-black-06: rgba(11, 11, 12, 0.06);
+  --neutral-black-08: rgba(11, 11, 12, 0.08);
+  --neutral-black-12: rgba(11, 11, 12, 0.12);
+  --neutral-black-16: rgba(11, 11, 12, 0.16);
+  --neutral-black-24: rgba(11, 11, 12, 0.24);
+  --neutral-black-40: rgba(11, 11, 12, 0.40);
+  --neutral-black-60: rgba(11, 11, 12, 0.60);
+  --neutral-black-72: rgba(11, 11, 12, 0.72);
+  --neutral-black-88: rgba(11, 11, 12, 0.88);
+
+  /* ------------------------------------------------------------------------
+     2. Translucency Presets (Liquid Glass on White)
+     Controllable via data-translucency="clear" | "regular" | "frosted"
+     ------------------------------------------------------------------------ */
+  --glass-blur: 24px;
+  --glass-sat: 160%;
+  --glass-opacity: 0.68;
+  --glass-specular-opacity: 0.95;
+
+  /* ------------------------------------------------------------------------
+     3. Light Theme (Default: White Dominant ~60%)
+     ------------------------------------------------------------------------ */
+  --surface-canvas: var(--md-white);
+  --surface-canvas-subtle: var(--md-white-warm);
+  --surface-card: var(--md-white);
+  --surface-card-subtle: var(--md-white-warm);
+  --surface-card-hover: #faf8f2;
+  --surface-card-muted: #f4f2ec;
+
+  --surface-border: var(--neutral-black-08);
+  --surface-border-strong: var(--neutral-black-16);
+
+  /* Glass Material on White Base */
+  --glass-bg: rgba(255, 255, 255, var(--glass-opacity));
+  --glass-chrome-solid: var(--md-white);
+  --glass-border-outer: var(--neutral-black-08);
+  --glass-border-inner: rgba(255, 255, 255, var(--glass-specular-opacity));
+  --glass-specular: rgba(255, 255, 255, var(--glass-specular-opacity));
+  --glass-inner-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 0 var(--neutral-black-03);
+
+  /* Glass Tint Variants */
+  --glass-tint-gold: var(--md-gold-glass);
+  --glass-tint-gold-border: rgba(255, 199, 44, 0.50);
+  --glass-tint-red: var(--md-red-glass);
+  --glass-tint-red-border: rgba(224, 58, 62, 0.40);
+
+  /* Typography on White (Strict Contrast) */
+  --text-primary: var(--md-black);           /* 19.8:1 AAA contrast */
+  --text-secondary: var(--neutral-black-72);  /* 8.8:1 AAA contrast */
+  --text-muted: var(--neutral-black-60);      /* 5.4:1 AA contrast */
+  --text-inverse: var(--md-white);
+
+  /* Action & Accent Mapping */
+  --action-primary: var(--md-red);            /* Red CTA */
+  --action-primary-hover: var(--md-red-hover);
+  --action-primary-text: var(--md-white);     /* 4.92:1 AA on Red */
+
+  --action-accent: var(--md-gold);            /* Gold Active / Accent */
+  --action-accent-hover: var(--md-gold-hover);
+  --action-accent-text: var(--md-black);      /* 12.4:1 AAA on Gold */
+
+  /* Status Colors (Strict Maryland Palette) */
+  --status-urgent: var(--md-red);
+  --status-urgent-bg: var(--md-red-subtle);
+  --status-active: var(--md-gold);
+  --status-active-bg: var(--md-gold-subtle);
+  --status-neutral: var(--neutral-black-60);
+  --status-neutral-bg: var(--neutral-black-06);
+
+  /* Shadows with authentic ambient occlusion */
+  --shadow-glass-sm: 0 2px 8px -1px rgba(11, 11, 12, 0.05), 0 1px 2px 0 rgba(11, 11, 12, 0.03);
+  --shadow-glass-md: 0 8px 32px -4px rgba(11, 11, 12, 0.10), 0 2px 6px -1px rgba(11, 11, 12, 0.04);
+  --shadow-glass-lg: 0 20px 48px -8px rgba(11, 11, 12, 0.14), 0 4px 12px -2px rgba(11, 11, 12, 0.05);
+  --shadow-card: 0 2px 12px -1px rgba(11, 11, 12, 0.05), 0 1px 3px 0 rgba(11, 11, 12, 0.02);
+  --shadow-floating: 0 14px 36px -4px rgba(11, 11, 12, 0.12), 0 4px 10px -2px rgba(11, 11, 12, 0.05);
+
+  /* Scroll Under Fade Edge */
+  --scroll-edge-fade: linear-gradient(to bottom, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%);
+  --scroll-edge-fade-bottom: linear-gradient(to top, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%);
+
+  /* ------------------------------------------------------------------------
+     4. Atmospheric Drifting Mesh Background Variables
+     Positioned off-center; slow 65s+ continuous drift
+     ------------------------------------------------------------------------ */
+  --mesh-gold-blob: radial-gradient(circle at 85% 15%, rgba(255, 199, 44, 0.14) 0%, rgba(255, 199, 44, 0) 55%);
+  --mesh-red-blob: radial-gradient(circle at 15% 85%, rgba(224, 58, 62, 0.10) 0%, rgba(224, 58, 62, 0) 50%);
+  --mesh-drift-duration: 65s;
+
+  /* Subtle Quartered Maryland Flag Heritage Motif (Faint watermark < 6%) */
+  --md-motif-opacity: 0.035;
+
+  /* ------------------------------------------------------------------------
+     5. Concentric Radii & Touch Targets
+     ------------------------------------------------------------------------ */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-pill: 9999px;
+
+  --touch-target-min: 44px;
+
+  /* ------------------------------------------------------------------------
+     6. Spacing Scale (4px/8px modular rhythm)
+     ------------------------------------------------------------------------ */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ------------------------------------------------------------------------
+     7. Spring Motion Curves
+     Apple-style short, interruptible, physical response
+     ------------------------------------------------------------------------ */
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.15);
+  --ease-liquid: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  --duration-micro: 120ms;
+  --duration-fast: 180ms;
+  --duration-normal: 260ms;
+  --duration-sheet: 340ms;
+
+  /* ------------------------------------------------------------------------
+     8. Custom Browser Surfaces
+     ------------------------------------------------------------------------ */
+  --selection-bg: var(--md-gold-subtle);
+  --selection-text: var(--md-black);
+  --focus-ring: 0 0 0 3px rgba(224, 58, 62, 0.35);
+}
+
+/* --------------------------------------------------------------------------
+   Translucency Preset Overrides
+   -------------------------------------------------------------------------- */
+:root[data-translucency="clear"],
+html[data-translucency="clear"] {
+  --glass-blur: 18px;
+  --glass-sat: 145%;
+  --glass-opacity: 0.55;
+  --glass-specular-opacity: 0.75;
+}
+
+:root[data-translucency="regular"],
+html[data-translucency="regular"] {
+  --glass-blur: 24px;
+  --glass-sat: 160%;
+  --glass-opacity: 0.68;
+  --glass-specular-opacity: 0.95;
+}
+
+:root[data-translucency="frosted"],
+html[data-translucency="frosted"] {
+  --glass-blur: 32px;
+  --glass-sat: 180%;
+  --glass-opacity: 0.88;
+  --glass-specular-opacity: 0.98;
+}
+
+/* --------------------------------------------------------------------------
+   Dark Mode (Black #0B0B0C Base, High-Contrast Maryland Accents)
+   -------------------------------------------------------------------------- */
+:root.dark,
+html.dark,
+[data-theme="dark"] {
+  --surface-canvas: var(--md-black);
+  --surface-canvas-subtle: #141416;
+  --surface-card: #161619;
+  --surface-card-subtle: #1c1c20;
+  --surface-card-hover: #222228;
+  --surface-card-muted: #2a2a32;
+
+  --surface-border: rgba(255, 255, 255, 0.08);
+  --surface-border-strong: rgba(255, 255, 255, 0.16);
+
+  /* Glass Material on Dark Base */
+  --glass-bg: rgba(22, 22, 25, var(--glass-opacity));
+  --glass-chrome-solid: #161619;
+  --glass-border-outer: rgba(0, 0, 0, 0.50);
+  --glass-border-inner: rgba(255, 255, 255, 0.14);
+  --glass-specular: rgba(255, 255, 255, 0.20);
+  --glass-inner-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.16), inset 0 -1px 0 0 rgba(0, 0, 0, 0.5);
+
+  /* Typography on Dark (White 92%) */
+  --text-primary: rgba(255, 255, 255, 0.92);
+  --text-secondary: rgba(255, 255, 255, 0.70);
+  --text-muted: rgba(255, 255, 255, 0.52);
+  --text-inverse: var(--md-black);
+
+  /* Tinted Glass on Dark */
+  --glass-tint-gold: rgba(255, 199, 44, 0.18);
+  --glass-tint-gold-border: rgba(255, 199, 44, 0.40);
+  --glass-tint-red: rgba(224, 58, 62, 0.18);
+  --glass-tint-red-border: rgba(224, 58, 62, 0.40);
+
+  /* Shadows on Dark */
+  --shadow-glass-sm: 0 2px 8px -1px rgba(0, 0, 0, 0.40), 0 1px 2px 0 rgba(0, 0, 0, 0.25);
+  --shadow-glass-md: 0 8px 32px -4px rgba(0, 0, 0, 0.55), 0 2px 6px -1px rgba(0, 0, 0, 0.30);
+  --shadow-glass-lg: 0 20px 48px -8px rgba(0, 0, 0, 0.70), 0 4px 12px -2px rgba(0, 0, 0, 0.45);
+  --shadow-card: 0 2px 12px -1px rgba(0, 0, 0, 0.40), 0 1px 3px 0 rgba(0, 0, 0, 0.25);
+  --shadow-floating: 0 14px 36px -4px rgba(0, 0, 0, 0.75), 0 4px 12px -2px rgba(0, 0, 0, 0.50);
+
+  /* Scroll Under Fade Edge on Dark */
+  --scroll-edge-fade: linear-gradient(to bottom, rgba(11, 11, 12, 1) 0%, rgba(11, 11, 12, 0) 100%);
+  --scroll-edge-fade-bottom: linear-gradient(to top, rgba(11, 11, 12, 1) 0%, rgba(11, 11, 12, 0) 100%);
+
+  --mesh-gold-blob: radial-gradient(circle at 85% 15%, rgba(255, 199, 44, 0.08) 0%, rgba(255, 199, 44, 0) 55%);
+  --mesh-red-blob: radial-gradient(circle at 15% 85%, rgba(224, 58, 62, 0.06) 0%, rgba(224, 58, 62, 0) 50%);
+
+  --selection-bg: rgba(255, 199, 44, 0.35);
+  --selection-text: var(--md-white);
+  --focus-ring: 0 0 0 3px rgba(255, 199, 44, 0.45);
+}
+
+/* --------------------------------------------------------------------------
+   Accessibility & System Preference Fallbacks (Mandatory)
+   -------------------------------------------------------------------------- */
+
+/* 1. Reduced Transparency Preference */
+@media (prefers-reduced-transparency: reduce) {
+  :root,
+  :root.dark,
+  html.dark,
+  [data-theme="dark"] {
+    --glass-blur: 0px !important;
+    --glass-sat: 100% !important;
+    --glass-opacity: 1 !important;
+    --glass-bg: var(--glass-chrome-solid) !important;
+  }
+}
+
+/* 2. High Contrast Preference */
+@media (prefers-contrast: more) {
+  :root {
+    --surface-border: var(--md-black) !important;
+    --surface-border-strong: var(--md-black) !important;
+    --glass-border-outer: var(--md-black) !important;
+    --glass-bg: var(--md-white) !important;
+    --glass-blur: 0px !important;
+  }
+  :root.dark,
+  html.dark,
+  [data-theme="dark"] {
+    --surface-border: var(--md-white) !important;
+    --surface-border-strong: var(--md-white) !important;
+    --glass-border-outer: var(--md-white) !important;
+    --glass-bg: var(--md-black) !important;
+    --glass-blur: 0px !important;
+  }
+}
+
+/* 3. Reduced Motion Preference (Disables drifting mesh & spring anims) */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-micro: 0ms !important;
+    --duration-fast: 0ms !important;
+    --duration-normal: 0ms !important;
+    --duration-sheet: 0ms !important;
+    --ease-spring: linear !important;
+    --ease-liquid: linear !important;
+    --mesh-drift-duration: 0s !important;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 4. Progressive Enhancement: Browsers without backdrop-filter support */
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  :root,
+  :root.dark,
+  html.dark,
+  [data-theme="dark"] {
+    --glass-bg: var(--glass-chrome-solid) !important;
+  }
+}

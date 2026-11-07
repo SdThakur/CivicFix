@@ -27,26 +27,28 @@ export default function LoginPage() {
 
       if (userRes.role === 'CITIZEN') {
         router.push('/dashboard');
+      } else if (userRes.role === 'ADMIN' || userRes.role === 'MANAGER' || userRes.role === 'DEPARTMENT_MANAGER') {
+        router.push('/admin');
       } else {
         router.push('/employee');
       }
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Invalid email or password. Try citizen@civicfix.gov / password');
+      setError(err.response?.data?.detail || 'Invalid email or password. Try citizen@civicfix.gov / password123');
     } finally {
       setLoading(false);
     }
   };
 
   const handleQuickLogin = (demoRole: string) => {
+    setPassword('password123');
     if (demoRole === 'citizen') {
       setEmail('citizen@civicfix.gov');
-      setPassword('password123');
     } else if (demoRole === 'employee') {
       setEmail('employee@civicfix.gov');
-      setPassword('password123');
+    } else if (demoRole === 'manager') {
+      setEmail('manager@civicfix.gov');
     } else if (demoRole === 'admin') {
       setEmail('admin@civicfix.gov');
-      setPassword('password123');
     }
   };
 
@@ -110,23 +112,36 @@ export default function LoginPage() {
 
         {/* Demo Fast Login Pills */}
         <div className="pt-4 border-t border-slate-800/80 space-y-2">
-          <span className="text-xs text-slate-400 font-medium block">Quick Demo Login:</span>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="flex items-center justify-between text-xs text-slate-400 font-medium">
+            <span>Quick Demo Login:</span>
+            <span className="text-[11px] text-slate-500 font-mono">pwd: password123</span>
+          </div>
+          <div className="grid grid-cols-4 gap-1.5">
             <button
+              type="button"
               onClick={() => handleQuickLogin('citizen')}
-              className="py-1.5 px-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 text-[11px] font-medium text-slate-300"
+              className="py-1.5 px-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/60 text-[11px] font-medium text-slate-300 transition-colors"
             >
               👤 Citizen
             </button>
             <button
+              type="button"
               onClick={() => handleQuickLogin('employee')}
-              className="py-1.5 px-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 text-[11px] font-medium text-slate-300"
+              className="py-1.5 px-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/60 text-[11px] font-medium text-slate-300 transition-colors"
             >
-              👷 Employee
+              👷 Worker
             </button>
             <button
+              type="button"
+              onClick={() => handleQuickLogin('manager')}
+              className="py-1.5 px-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/60 text-[11px] font-medium text-slate-300 transition-colors"
+            >
+              🏢 Manager
+            </button>
+            <button
+              type="button"
               onClick={() => handleQuickLogin('admin')}
-              className="py-1.5 px-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 text-[11px] font-medium text-slate-300"
+              className="py-1.5 px-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/60 text-[11px] font-medium text-slate-300 transition-colors"
             >
               👑 Admin
             </button>

@@ -1,4 +1,16 @@
-export type UserRole = 'CITIZEN' | 'EMPLOYEE' | 'MANAGER' | 'ADMIN';
+export type UserRole =
+  | 'CITIZEN'
+  | 'STAFF'
+  | 'MANAGER'
+  | 'SUPERVISOR'
+  | 'CONTRACTOR'
+  | 'ADMIN'
+  | 'DISPATCHER_311'
+  | 'INSPECTOR'
+  | 'FIELD_WORKER'
+  | 'CREW_LEAD'
+  | 'DEPARTMENT_MANAGER'
+  | 'GIS_ANALYST';
 
 export type ReportStatus =
   | 'SUBMITTED'
@@ -60,6 +72,7 @@ export interface PriorityBreakdown {
 
 export interface Report {
   id: string | number;
+  tracking_number?: string;
   title: string;
   description?: string;
   category: string;
@@ -82,6 +95,11 @@ export interface Report {
   duplicate_of_id?: string | number;
   created_at?: string;
   updated_at?: string;
+  triage_at?: string;
+  dispatch_at?: string;
+  resolved_at?: string;
+  after_image_url?: string;
+  crew_notes?: string;
 }
 
 export interface DuplicateMatch {
@@ -181,7 +199,7 @@ export interface Notification {
   user_id: string;
   type: string;
   title: string;
-  body: string;
+  message: string;
   data?: Record<string, any>;
   read_at?: string;
   created_at: string;

@@ -41,9 +41,10 @@ def process_report_task(
     """
     # Disambiguate arguments whether called as bound Celery task or direct function
     if isinstance(self_or_report_id, str):
+        # Direct function call: process_report_task(report_id, report_data, existing_issues)
         report_id = self_or_report_id
-        report_data = report_data_or_existing if isinstance(report_data_or_existing, dict) else (report_id_or_data or {})
-        existing = existing_issues
+        report_data = report_id_or_data if isinstance(report_id_or_data, dict) else (report_data_or_existing or {})
+        existing = existing_issues if existing_issues is not None else (report_data_or_existing if isinstance(report_data_or_existing, list) else None)
     else:
         # Bound Celery task where first arg is self
         report_id = str(report_id_or_data)

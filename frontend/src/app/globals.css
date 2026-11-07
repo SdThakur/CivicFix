@@ -1,86 +1,263 @@
 @import 'leaflet/dist/leaflet.css';
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+@import '../styles/tokens.css';
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   body {
-    @apply bg-[#070a12] text-slate-100 font-sans antialiased min-h-screen selection:bg-cyan-500 selection:text-black;
+    background-color: var(--surface-canvas);
+    color: var(--text-primary);
+    font-family: 'Public Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+    transition: background-color var(--duration-normal) var(--ease-liquid),
+                color var(--duration-normal) var(--ease-liquid);
+  }
+
+  ::selection {
+    background: var(--selection-bg);
+    color: var(--selection-text);
+  }
+
+  :focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
   }
 }
 
-/* Stitch Design System Utilities for CivicFix */
-.glass-panel {
-  background: rgba(13, 19, 33, 0.7);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+/* ==========================================================================
+   Atmospheric Drifting Mesh Backdrop (8-18% Opacity on White)
+   ========================================================================== */
+.md-mesh-backdrop {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
 }
 
-.glass-card {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.md-mesh-backdrop-gold {
+  position: absolute;
+  top: -10%;
+  right: -5%;
+  width: 65vw;
+  height: 65vh;
+  max-width: 800px;
+  max-height: 800px;
+  background: var(--mesh-gold-blob);
+  filter: blur(60px);
+  will-change: transform;
 }
 
-.glass-card-hover {
-  transition: all 0.2s ease-in-out;
-}
-.glass-card-hover:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(0, 242, 255, 0.3);
-  box-shadow: 0 0 20px rgba(0, 242, 255, 0.12);
+.md-mesh-backdrop-red {
+  position: absolute;
+  bottom: -15%;
+  left: -5%;
+  width: 70vw;
+  height: 70vh;
+  max-width: 850px;
+  max-height: 850px;
+  background: var(--mesh-red-blob);
+  filter: blur(80px);
+  will-change: transform;
 }
 
-.gradient-text {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-400;
+/* Faint Quartered Maryland Flag Heritage Motif (<6% opacity watermark) */
+.md-flag-watermark {
+  position: absolute;
+  inset: 0;
+  opacity: var(--md-motif-opacity);
+  pointer-events: none;
+  background-image: 
+    linear-gradient(45deg, #0b0b0c 25%, transparent 25%), 
+    linear-gradient(-45deg, #0b0b0c 25%, transparent 25%), 
+    linear-gradient(45deg, transparent 75%, #0b0b0c 75%), 
+    linear-gradient(-45deg, transparent 75%, #0b0b0c 75%);
+  background-size: 32px 32px;
+  background-position: 0 0, 0 16px, 16px -16px, -16px 0px;
 }
 
-.gradient-border {
+/* ==========================================================================
+   Liquid Glass Primitives (Control Layer Only on White Canvas)
+   ========================================================================== */
+
+/* Specular top-edge refraction highlight */
+.specular-edge {
   position: relative;
-  border-radius: 0.75rem;
-  background: linear-gradient(135deg, rgba(0, 242, 255, 0.4), rgba(59, 130, 246, 0.2));
-  padding: 1px;
+}
+.specular-edge::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    var(--glass-specular) 25%,
+    var(--glass-specular) 75%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
 }
 
-.glow-cyan {
-  box-shadow: 0 0 20px rgba(0, 242, 255, 0.2);
+/* Primary floating glass control surface */
+.liquid-glass-surface {
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  border: 1px solid var(--glass-border-outer);
+  box-shadow: var(--shadow-glass-md), var(--glass-inner-shadow);
+  position: relative;
 }
 
-.glow-rose {
-  box-shadow: 0 0 20px rgba(244, 63, 94, 0.2);
+/* Concentric morphing glass container */
+.liquid-glass-container {
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  border: 1px solid var(--glass-border-outer);
+  box-shadow: var(--shadow-glass-lg), var(--glass-inner-shadow);
+  border-radius: var(--radius-xl);
 }
 
-.glow-emerald {
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+/* Tinted Glass Variants */
+.liquid-glass-gold {
+  background-color: var(--glass-tint-gold);
+  border: 1px solid var(--glass-tint-gold-border);
+  color: var(--md-black);
+  box-shadow: 0 4px 16px -2px rgba(255, 199, 44, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
-/* Pulse animation for active AI scanning & telemetry */
-@keyframes radar-sweep {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+.liquid-glass-red {
+  background-color: var(--glass-tint-red);
+  border: 1px solid var(--glass-tint-red-border);
+  color: var(--md-red);
+  box-shadow: 0 4px 16px -2px rgba(224, 58, 62, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
-.radar-spinner {
-  animation: radar-sweep 2.5s linear infinite;
+/* Floating interactive button inside glass chrome */
+.liquid-glass-button {
+  min-height: var(--touch-target-min);
+  min-width: var(--touch-target-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-radius: var(--radius-md);
+  transition: transform var(--duration-fast) var(--ease-spring),
+              background-color var(--duration-fast) var(--ease-liquid),
+              box-shadow var(--duration-fast) var(--ease-liquid);
+  touch-action: manipulation;
+  user-select: none;
+}
+.liquid-glass-button:active {
+  transform: scale(0.97);
 }
 
-/* Custom Scrollbar */
+/* Maryland Action Buttons */
+.btn-md-red {
+  background-color: var(--action-primary);
+  color: var(--action-primary-text);
+  box-shadow: 0 4px 14px -2px rgba(224, 58, 62, 0.35);
+  transition: all var(--duration-fast) var(--ease-spring);
+}
+.btn-md-red:hover {
+  background-color: var(--action-primary-hover);
+  box-shadow: 0 6px 20px -2px rgba(224, 58, 62, 0.45);
+  transform: translateY(-1px);
+}
+.btn-md-red:active {
+  transform: scale(0.98);
+}
+
+.btn-md-gold {
+  background-color: var(--action-accent);
+  color: var(--action-accent-text);
+  box-shadow: 0 4px 14px -2px rgba(255, 199, 44, 0.35);
+  transition: all var(--duration-fast) var(--ease-spring);
+}
+.btn-md-gold:hover {
+  background-color: var(--action-accent-hover);
+  box-shadow: 0 6px 20px -2px rgba(255, 199, 44, 0.45);
+  transform: translateY(-1px);
+}
+.btn-md-gold:active {
+  transform: scale(0.98);
+}
+
+/* Scroll under chrome soft edge fade */
+.scroll-under-fade-top {
+  mask-image: linear-gradient(to bottom, transparent 0, black 28px, black 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 28px, black 100%);
+}
+
+.scroll-under-fade-bottom {
+  mask-image: linear-gradient(to top, transparent 0, black 28px, black 100%);
+  -webkit-mask-image: linear-gradient(to top, transparent 0, black 28px, black 100%);
+}
+
+/* Solid elevated body surface (NEVER glass for body content) */
+.surface-card-solid {
+  background-color: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  transition: border-color var(--duration-fast) var(--ease-liquid),
+              box-shadow var(--duration-fast) var(--ease-liquid);
+}
+
+/* Clean, themed scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #070a12;
+  background: var(--surface-canvas);
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
-  border-radius: 3px;
+  background: var(--surface-border-strong);
+  border-radius: var(--radius-pill);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #00f2ff;
+  background: var(--text-muted);
+}
+
+/* ==========================================================================
+   Accessibility: Universal Visible Focus Rings (Black with White Offset)
+   WCAG 2.4.7 (Focus Visible) and WCAG 2.4.11 (Focus Appearance)
+   ========================================================================== */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #0B0B0C !important;
+  outline-offset: 2px !important;
+}
+
+.dark a:focus-visible,
+.dark button:focus-visible,
+.dark input:focus-visible,
+.dark select:focus-visible,
+.dark textarea:focus-visible,
+.dark [tabindex]:focus-visible {
+  outline: 2px solid #FFFFFF !important;
+  outline-offset: 2px !important;
 }
 

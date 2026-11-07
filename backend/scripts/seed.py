@@ -62,18 +62,14 @@ async def seed_data(generate_mock: bool = False):
         # 2. Create Core User Accounts
         print("Seeding Core User Accounts...")
         pwd = get_password_hash("password123")
-        admin_pwd = get_password_hash("admin123")
-        manager_pwd = get_password_hash("manager123")
-        inspector_pwd = get_password_hash("inspector123")
-        worker_pwd = get_password_hash("worker123")
-        citizen_pwd = get_password_hash("citizen123")
 
         users = [
-            User(email="admin@civicfix.gov", hashed_password=admin_pwd, full_name="Alice Admin", role=UserRole.ADMIN, is_active=True, department_id=dept_map["DPW"].id),
-            User(email="manager@civicfix.gov", hashed_password=manager_pwd, full_name="Manager DPW", role=UserRole.MANAGER, is_active=True, department_id=dept_map["DPW"].id),
-            User(email="inspector@civicfix.gov", hashed_password=inspector_pwd, full_name="Inspector DPW", role=UserRole.INSPECTOR, is_active=True, department_id=dept_map["DPW"].id),
-            User(email="worker@civicfix.gov", hashed_password=worker_pwd, full_name="Field Technician", role=UserRole.FIELD_WORKER, is_active=True, department_id=dept_map["DPW"].id),
-            User(email="citizen@civicfix.gov", hashed_password=citizen_pwd, full_name="Citizen Demo", role=UserRole.CITIZEN, is_active=True),
+            User(email="admin@civicfix.gov", hashed_password=pwd, full_name="Alice Admin", role=UserRole.ADMIN, is_active=True, department_id=dept_map["DPW"].id),
+            User(email="manager@civicfix.gov", hashed_password=pwd, full_name="Manager DPW", role=UserRole.MANAGER, is_active=True, department_id=dept_map["DPW"].id),
+            User(email="inspector@civicfix.gov", hashed_password=pwd, full_name="Inspector DPW", role=UserRole.INSPECTOR, is_active=True, department_id=dept_map["DPW"].id),
+            User(email="worker@civicfix.gov", hashed_password=pwd, full_name="Field Technician", role=UserRole.FIELD_WORKER, is_active=True, department_id=dept_map["DPW"].id),
+            User(email="employee@civicfix.gov", hashed_password=pwd, full_name="Demo Employee", role=UserRole.FIELD_WORKER, is_active=True, department_id=dept_map["DPW"].id),
+            User(email="citizen@civicfix.gov", hashed_password=pwd, full_name="Citizen Demo", role=UserRole.CITIZEN, is_active=True),
         ]
 
         for u in users:

@@ -33,7 +33,7 @@ async def create_issue(
         report = await report_repo.get_by_id(db, initial_report_id)
         if not report:
             raise HTTPException(
-                status_code=status.HTTP_444_NOT_FOUND if hasattr(status, 'HTTP_444_NOT_FOUND') else 404,
+                status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Report with id {initial_report_id} not found."
             )
         issue_in = IssueCreate(

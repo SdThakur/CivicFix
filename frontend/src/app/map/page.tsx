@@ -3,25 +3,42 @@
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
-import { MapPin, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
+import { 
+  MapPin, 
+  Loader2, 
+  RefreshCw, 
+  AlertCircle, 
+  Layers, 
+  Filter, 
+  Map as MapIcon, 
+  List, 
+  ChevronUp, 
+  ChevronDown, 
+  Maximize2, 
+  Minimize2,
+  Search,
+  ArrowUpDown
+} from 'lucide-react';
 import { issueApi, reportApi } from '@/lib/api';
 import type { Issue } from '@/types';
+import StatusBadge from '@/components/ui/StatusBadge';
+import EmptyState from '@/components/ui/EmptyState';
 
-// Dynamically import the map component to avoid SSR issues with Leaflet
-const IssueMapInner = dynamic(() => import('@/components/map/IssueMapInner'), {
+// Dynamically import GoogleMapView to ensure clean browser-only initialization
+const GoogleMapView = dynamic(() => import('@/components/map/GoogleMapView'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full flex items-center justify-center bg-slate-900/60 rounded-2xl">
-      <div className="flex flex-col items-center gap-3 text-slate-400">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-        <span className="text-sm font-medium">Loading map engine...</span>
+    <div className="w-full h-full min-h-[500px] flex items-center justify-center surface-card-solid rounded-3xl">
+      <div className="flex flex-col items-center gap-3 text-content-secondary">
+        <Loader2 className="w-8 h-8 animate-spin text-md-red" />
+        <span className="text-sm font-bold text-content-primary">Initializing Google Maps Engine...</span>
       </div>
     </div>
   ),
 });
 
 const CATEGORY_FILTERS = ['ALL', 'Pothole', 'Streetlight', 'Trash', 'Sidewalk', 'Graffiti', 'Road Damage'];
-const STATUS_FILTERS = ['ALL', 'SUBMITTED', 'IN_PROGRESS', 'VERIFICATION', 'RESOLVED', 'UNDER_REVIEW'];
+const STATUS_FILTERS = ['ALL', 'SUBMITTED', 'IN_PROGRESS', 'VERIFICATION', 'RESOLVED'];
 
 function MapPageContent() {
   const searchParams = useSearchParams();
@@ -39,6 +56,15 @@ function MapPageContent() {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [selectedStatus, setSelectedStatus] = useState('ALL');
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
+  
+  // Phase 3 Features:
+  // 1. Accessible List View Toggle (WCAG 2.1 AA)
+  const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'priority' | 'date' | 'reports'>('priority');
+
+  // 2. Mobile Draggable Bottom Sheet State ('peek' | 'half' | 'full')
+  const [sheetState, setSheetState] = useState<'peek' | 'half' | 'full'>('peek');
 
   const fetchIssues = useCallback(async () => {
     setLoading(true);
@@ -61,17 +87,17 @@ function MapPageContent() {
           if (r.latitude && r.longitude) {
             formattedIssues.push({
               id: `REP-${r.id}` as any,
-              title: r.title || 'Citizen Report',
+              title: r.title || 'Citizen Hazard Report',
               category: r.category || 'OTHER',
               severity: (r.priority as any) || 'MEDIUM',
               status: (r.status as any) || 'SUBMITTED',
               description: r.description || '',
               priority_score: r.ai_score || 50.0,
-              location_id: r.id,
+              location_id: String(r.id),
               report_count: 1,
-              created_at: r.created_at,
+              created_at: r.created_at || new Date().toISOString(),
               location: {
-                id: r.id,
+                id: String(r.id),
                 latitude: r.latitude,
                 longitude: r.longitude,
                 address: r.address || `${r.latitude.toFixed(4)}, ${r.longitude.toFixed(4)}`,
@@ -79,6 +105,51 @@ function MapPageContent() {
             } as Issue);
           }
         });
+      }
+
+      // Seeded demonstration records if backend has no active data
+      if (formattedIssues.length === 0) {
+        formattedIssues.push(
+          {
+            id: 'DEMO-1',
+            title: 'Deep Pothole on State Circle',
+            category: 'Pothole',
+            severity: 'CRITICAL',
+            status: 'SUBMITTED',
+            description: '10-inch asphalt fissure in travel lane posing severe tire damage risk.',
+            priority_score: 92,
+            location_id: 'LOC-1',
+            report_count: 4,
+            created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
+            location: { id: 'LOC-1', latitude: 38.9784, longitude: -76.4922, address: 'State Circle, Annapolis, MD' },
+          } as Issue,
+          {
+            id: 'DEMO-2',
+            title: 'Unlit Streetlight at Main & Green',
+            category: 'Streetlight',
+            severity: 'MEDIUM',
+            status: 'IN_PROGRESS',
+            description: 'Municipal fixture dark during evening hours along high-pedestrian corridor.',
+            priority_score: 64,
+            location_id: 'LOC-2',
+            report_count: 2,
+            created_at: new Date(Date.now() - 3600000 * 8).toISOString(),
+            location: { id: 'LOC-2', latitude: 38.9765, longitude: -76.4885, address: 'Main St & Green St, Annapolis, MD' },
+          } as Issue,
+          {
+            id: 'DEMO-3',
+            title: 'Heaved Sidewalk Concrete Slab',
+            category: 'Sidewalk',
+            severity: 'LOW',
+            status: 'RESOLVED',
+            description: 'ADA tripping hazard leveled and resurfaced by DPW asphalt crew.',
+            priority_score: 28,
+            location_id: 'LOC-3',
+            report_count: 1,
+            created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
+            location: { id: 'LOC-3', latitude: 38.9740, longitude: -76.4950, address: 'West St, Annapolis, MD' },
+          } as Issue
+        );
       }
 
       setIssues(formattedIssues);
@@ -95,7 +166,7 @@ function MapPageContent() {
         }
       }
     } catch (err: any) {
-      setError('Unable to load issues from the server. Make sure the backend is running.');
+      setError('Unable to load issues from server. Make sure the backend is active.');
       setIssues([]);
     } finally {
       setLoading(false);
@@ -106,67 +177,131 @@ function MapPageContent() {
     fetchIssues();
   }, [fetchIssues]);
 
-  // Issues that have valid location coordinates for map rendering
   const mappableIssues = issues.filter(
     (i) => i.location?.latitude && i.location?.longitude
   );
 
+  // Filtered and sorted issues for the accessible list view
+  const filteredIssues = mappableIssues
+    .filter((issue) => {
+      if (!searchQuery) return true;
+      const query = searchQuery.toLowerCase();
+      return (
+        issue.title.toLowerCase().includes(query) ||
+        issue.category.toLowerCase().includes(query) ||
+        issue.location?.address.toLowerCase().includes(query)
+      );
+    })
+    .sort((a, b) => {
+      if (sortBy === 'priority') return (b.priority_score || 0) - (a.priority_score || 0);
+      if (sortBy === 'reports') return (b.report_count || 1) - (a.report_count || 1);
+      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+    });
+
+  // Switch to map and focus on an issue from the accessible list
+  const handleLocateOnMap = (issue: Issue) => {
+    setSelectedIssue(issue);
+    setViewMode('map');
+    setSheetState('peek');
+  };
+
   return (
-    <div className="space-y-4 py-4">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 glass-panel p-4 sm:p-5 rounded-2xl border border-slate-800">
+    <div className="space-y-4 py-3 sm:py-6">
+      
+      {/* Top Header Card */}
+      <div className="surface-card-solid p-5 sm:p-6 rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border border-surface-border">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-            <MapPin className="w-6 h-6 text-blue-500" />
-            Public City Infrastructure Map
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-2.5 h-2.5 rounded-full bg-md-red inline-block" />
+            <span className="text-xs font-bold text-md-red uppercase tracking-wider">
+              Live Geospatial Dispatch
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-content-primary tracking-tight font-display">
+            Public Infrastructure City Map
           </h1>
-          <p className="text-slate-400 text-xs mt-1">
-            Real-time geospatial feed of city hazards, active work orders, and resolved repairs
+          <p className="text-xs text-content-secondary mt-1">
+            Real-time geospatial visualization of road hazards, work orders, and verified repairs.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Accessible List / Map View Toggle */}
+          <div className="flex items-center rounded-xl bg-neutral-black-06 p-1 border border-surface-border" role="group" aria-label="View Mode">
+            <button
+              onClick={() => setViewMode('map')}
+              className={`min-h-[40px] px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+                viewMode === 'map'
+                  ? 'bg-white text-md-black shadow-sm font-black'
+                  : 'text-content-secondary hover:text-content-primary'
+              }`}
+              aria-pressed={viewMode === 'map'}
+            >
+              <MapIcon className="w-3.5 h-3.5" />
+              <span>Map View</span>
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`min-h-[40px] px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+                viewMode === 'list'
+                  ? 'bg-white text-md-black shadow-sm font-black'
+                  : 'text-content-secondary hover:text-content-primary'
+              }`}
+              aria-pressed={viewMode === 'list'}
+            >
+              <List className="w-3.5 h-3.5" />
+              <span>Accessible List</span>
+            </button>
+          </div>
+
           <button
             onClick={fetchIssues}
             disabled={loading}
-            className="p-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:border-blue-500/50 transition-colors disabled:opacity-50"
-            title="Refresh data"
+            className="min-h-[44px] min-w-[44px] px-3.5 py-2 rounded-xl liquid-glass-surface specular-edge text-content-primary hover:bg-neutral-black-06 active:scale-95 transition-all flex items-center gap-2 border border-surface-border text-xs font-bold"
+            title="Refresh map incidents"
+            aria-label="Refresh incident feed"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 text-content-primary ${loading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Refresh</span>
           </button>
-          {!loading && (
-            <span className="text-xs text-slate-400 font-medium">
-              {mappableIssues.length} mapped ·{' '}
-              <span className="text-blue-400">{issues.length} total</span>
-            </span>
-          )}
+          
+          <div className="px-3.5 py-2 rounded-xl bg-neutral-black-06 border border-surface-border text-xs font-bold text-content-primary">
+            <span className="text-md-red font-black">{mappableIssues.length}</span> Mapped
+          </div>
         </div>
       </div>
 
-      {/* Category Filter Pills */}
-      <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+      {/* Floating Filter Pills Bar in Concentric Glass (Limited Backdrop-Filter) */}
+      <div className="p-1.5 rounded-2xl liquid-glass-surface specular-edge border border-surface-border flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-1 pl-2 pr-1 text-content-secondary text-xs font-bold flex-shrink-0">
+          <Filter className="w-3.5 h-3.5 text-content-primary" />
+          <span>Category:</span>
+        </div>
+
         {CATEGORY_FILTERS.map((cat) => (
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
-            className={`py-2.5 px-4 text-sm font-medium rounded-xl transition-colors whitespace-nowrap ${
+            className={`min-h-[44px] px-3.5 text-xs font-bold rounded-xl transition-all whitespace-nowrap flex items-center justify-center ${
               selectedCategory === cat
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
+                ? 'liquid-glass-gold shadow-sm font-black text-md-black'
+                : 'text-content-secondary hover:text-content-primary hover:bg-neutral-black-06'
             }`}
           >
             {cat}
           </button>
         ))}
-        <div className="h-6 w-px bg-slate-800 mx-1 flex-shrink-0" />
-        {STATUS_FILTERS.slice(0, 4).map((s) => (
+
+        <div className="h-5 w-px bg-surface-border mx-1 flex-shrink-0" />
+
+        {STATUS_FILTERS.map((s) => (
           <button
             key={s}
             onClick={() => setSelectedStatus(s)}
-            className={`py-2.5 px-4 text-sm font-medium rounded-xl transition-colors whitespace-nowrap ${
+            className={`min-h-[44px] px-3 text-xs font-semibold rounded-xl transition-all whitespace-nowrap flex items-center justify-center ${
               selectedStatus === s
-                ? 'bg-slate-700 text-white border border-slate-600'
-                : 'text-slate-400 hover:text-slate-300'
+                ? 'btn-md-red text-white font-bold shadow-sm'
+                : 'text-content-muted hover:text-content-primary hover:bg-neutral-black-06'
             }`}
           >
             {s === 'ALL' ? 'All Status' : s.replace('_', ' ')}
@@ -176,136 +311,322 @@ function MapPageContent() {
 
       {/* Error Banner */}
       {error && (
-        <div className="flex items-center justify-between p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm">
+        <div className="flex items-center justify-between p-4 rounded-2xl bg-md-red-subtle border border-md-red/30 text-md-red text-sm">
           <div className="flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <span>{error}</span>
+            <AlertCircle className="w-5 h-5 flex-shrink-0 text-md-red" />
+            <span className="font-semibold">{error}</span>
           </div>
           <button 
             onClick={fetchIssues} 
-            className="px-3 py-1.5 text-xs font-semibold bg-rose-500/20 hover:bg-rose-500/30 rounded-lg transition-colors"
+            className="min-h-[44px] px-4 text-xs font-bold btn-md-red text-white rounded-xl"
           >
             Try Again
           </button>
         </div>
       )}
 
-      {/* Main Layout: Map + Sidebar */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-4rem)] min-h-[450px] md:h-[650px]">
-        {/* Map Panel (2 cols) */}
-        <div className="lg:col-span-2 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-900/60 flex flex-col relative h-full">
-          {loading ? (
-            <div className="w-full h-full flex items-center justify-center">
-              <div className="flex flex-col items-center gap-3 text-slate-400">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-                <span className="text-sm font-medium">Fetching geospatial data...</span>
+      {/* Screen Reader Announcement */}
+      <div className="sr-only" aria-live="polite">
+        {`Displaying ${filteredIssues.length} infrastructure incidents.`}
+      </div>
+
+      {/* ========================================================================= */}
+      {/* VIEW MODE 1: ACCESSIBLE LIST VIEW (FULL ALTERNATIVE TO MAP)               */}
+      {/* ========================================================================= */}
+      {viewMode === 'list' ? (
+        <section className="surface-card-solid p-6 rounded-3xl border border-surface-border space-y-5" aria-label="Accessible Incident Directory">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-surface-border pb-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="w-4 h-4 text-content-muted absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Filter by title, category, or street address..."
+                className="w-full pl-9 pr-3 py-2 rounded-xl bg-surface-card-subtle border border-surface-border text-xs font-semibold text-content-primary focus:outline-none focus:ring-2 focus:ring-md-black"
+                aria-label="Filter incidents"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <ArrowUpDown className="w-3.5 h-3.5 text-content-muted" />
+              <label htmlFor="sort-select" className="text-xs font-bold text-content-secondary">Sort by:</label>
+              <select
+                id="sort-select"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="bg-surface-card-subtle border border-surface-border rounded-xl text-xs font-bold text-content-primary px-3 py-2 focus:outline-none"
+              >
+                <option value="priority">Urgency Score (High to Low)</option>
+                <option value="reports">Report Count</option>
+                <option value="date">Most Recent</option>
+              </select>
+            </div>
+          </div>
+
+          {filteredIssues.length === 0 ? (
+            <EmptyState
+              title="No incidents matching search criteria"
+              description="Try adjusting your keywords, selecting 'All Categories', or clearing status filters."
+              actionLabel="Reset Search Filters"
+              onAction={() => { setSearchQuery(''); setSelectedCategory('ALL'); setSelectedStatus('ALL'); }}
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-surface-border text-content-muted uppercase tracking-wider font-bold">
+                    <th className="py-3 px-3">Hazard Title & Location</th>
+                    <th className="py-3 px-3">Category</th>
+                    <th className="py-3 px-3">Lifecycle Status</th>
+                    <th className="py-3 px-3 text-center">Urgency</th>
+                    <th className="py-3 px-3 text-center">Citizen Reports</th>
+                    <th className="py-3 px-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-surface-border">
+                  {filteredIssues.map((issue) => (
+                    <tr 
+                      key={issue.id} 
+                      className="hover:bg-neutral-black-06 transition-colors group focus-within:bg-neutral-black-06"
+                    >
+                      <td className="py-3.5 px-3">
+                        <div className="font-bold text-sm text-content-primary">{issue.title}</div>
+                        <div className="text-content-secondary text-[11px] flex items-center gap-1 mt-0.5">
+                          <MapPin className="w-3 h-3 text-md-red" />
+                          <span>{issue.location?.address}</span>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-3">
+                        <span className="px-2.5 py-1 rounded-full bg-neutral-black-06 text-content-primary font-bold text-[11px]">
+                          {issue.category}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-3">
+                        <StatusBadge status={issue.status} size="sm" />
+                      </td>
+                      <td className="py-3.5 px-3 text-center font-black text-sm text-content-primary">
+                        {Math.round(issue.priority_score || 50)}
+                      </td>
+                      <td className="py-3.5 px-3 text-center font-bold text-content-secondary">
+                        👥 {issue.report_count || 1}
+                      </td>
+                      <td className="py-3.5 px-3 text-right">
+                        <button
+                          onClick={() => handleLocateOnMap(issue)}
+                          className="min-h-[40px] px-3.5 py-1.5 rounded-xl btn-md-gold text-md-black font-bold text-xs shadow-sm hover:scale-105 active:scale-95 transition-all inline-flex items-center gap-1"
+                          aria-label={`View ${issue.title} on map`}
+                        >
+                          <MapIcon className="w-3.5 h-3.5 text-md-black" />
+                          <span>View on Map</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      ) : (
+        /* ========================================================================= */
+        /* VIEW MODE 2: MAP VIEW (DESKTOP 2/3 + 1/3, MOBILE FULL MAP + BOTTOM SHEET) */
+        /* ========================================================================= */
+        <div className="relative h-[calc(100vh-14rem)] min-h-[550px] md:h-[680px]">
+          
+          {/* Main Desktop Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 h-full">
+            
+            {/* Google Map Panel: Full-height on mobile, 2 cols on desktop */}
+            <div className="lg:col-span-2 h-full rounded-3xl overflow-hidden relative shadow-card border border-surface-border">
+              <GoogleMapView
+                issues={mappableIssues}
+                selectedIssue={selectedIssue}
+                onSelectIssue={(issue) => {
+                  setSelectedIssue(issue);
+                  // On mobile, snap to peek so user sees the pin
+                  if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                    setSheetState('peek');
+                  }
+                }}
+                initialCenter={initialCenter}
+                className="w-full h-full"
+              />
+            </div>
+
+            {/* Desktop Persistent Sidebar (1 col) - Hidden on mobile */}
+            <div className="hidden lg:flex surface-card-solid p-5 flex-col h-full rounded-3xl border border-surface-border">
+              <div className="flex items-center justify-between border-b border-surface-border pb-3 mb-3">
+                <span className="text-xs font-black text-content-primary uppercase tracking-wider">
+                  {loading ? 'Loading...' : `${mappableIssues.length} Incidents Found`}
+                </span>
+                <span className="text-[11px] font-bold text-md-red">
+                  Live Feed
+                </span>
+              </div>
+
+              <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+                {loading ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="p-4 rounded-2xl bg-surface-card-subtle border border-surface-border animate-pulse space-y-2">
+                      <div className="h-3.5 bg-neutral-black-12 rounded w-3/4" />
+                      <div className="h-3 bg-neutral-black-06 rounded w-1/2" />
+                    </div>
+                  ))
+                ) : mappableIssues.length === 0 ? (
+                  <EmptyState
+                    title="No mapped incidents"
+                    description="No incidents match the active filter criteria."
+                    actionLabel="Clear Filters"
+                    onAction={() => { setSelectedCategory('ALL'); setSelectedStatus('ALL'); }}
+                  />
+                ) : (
+                  mappableIssues.map((issue) => {
+                    const isSelected = selectedIssue?.id === issue.id;
+
+                    return (
+                      <button
+                        key={issue.id}
+                        onClick={() => setSelectedIssue(isSelected ? null : issue)}
+                        className={`w-full text-left p-4 rounded-2xl border transition-all space-y-2 ${
+                          isSelected
+                            ? 'border-md-gold bg-md-gold-subtle shadow-md'
+                            : 'border-surface-border hover:border-surface-border-strong bg-surface-card hover:bg-surface-card-subtle'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-neutral-black-06 text-content-secondary">
+                            {issue.id}
+                          </span>
+                          <StatusBadge status={issue.status} size="sm" />
+                        </div>
+
+                        <h3 className="font-bold text-content-primary text-sm leading-snug">
+                          {issue.title}
+                        </h3>
+
+                        {issue.location && (
+                          <div className="text-xs text-content-secondary truncate flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5 text-md-red flex-shrink-0" />
+                            <span className="truncate">{issue.location.address}</span>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between text-xs pt-2 border-t border-surface-border">
+                          <span className="text-content-muted font-semibold">
+                            👥 {issue.report_count ?? 1} Citizen Report
+                          </span>
+                          <span className="font-bold text-content-primary">
+                            Score: {Math.round(issue.priority_score || 50)}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
               </div>
             </div>
-          ) : (
-            <IssueMapInner
-              issues={mappableIssues}
-              selectedIssue={selectedIssue}
-              onSelectIssue={setSelectedIssue}
-              initialCenter={initialCenter}
-            />
-          )}
-        </div>
 
-        {/* Issues Sidebar (1 col) */}
-        <div className="glass-panel p-4 rounded-2xl border border-slate-800 flex flex-col h-full">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
-            <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-              {loading ? 'Loading...' : `${mappableIssues.length} Active Incidents`}
-            </span>
-            <span className="text-[11px] text-blue-400 font-semibold">Live Geospatial Feed</span>
           </div>
 
-          <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-            {loading ? (
-              // Skeleton loading state
-              Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 animate-pulse space-y-2">
-                  <div className="h-3 bg-slate-800 rounded w-3/4" />
-                  <div className="h-3 bg-slate-800 rounded w-1/2" />
-                  <div className="h-3 bg-slate-800 rounded w-2/3" />
+          {/* ========================================================================= */}
+          {/* MOBILE DRAGGABLE BOTTOM SHEET (PEEK / HALF / FULL)                        */}
+          {/* Replaces the cramped 2/3 + 1/3 mobile split with full-height map overlay   */}
+          {/* ========================================================================= */}
+          <div 
+            className={`lg:hidden absolute bottom-0 left-0 right-0 z-30 transition-all duration-300 ease-out surface-card-solid border-t border-surface-border rounded-t-3xl shadow-floating flex flex-col ${
+              sheetState === 'peek' 
+                ? 'h-20' 
+                : sheetState === 'half' 
+                ? 'h-[46vh]' 
+                : 'h-[82vh]'
+            }`}
+          >
+            {/* Sheet Drag Handle Header */}
+            <div 
+              onClick={() => {
+                if (sheetState === 'peek') setSheetState('half');
+                else if (sheetState === 'half') setSheetState('full');
+                else setSheetState('peek');
+              }}
+              className="p-2 cursor-pointer flex-shrink-0 flex flex-col items-center select-none"
+              role="button"
+              tabIndex={0}
+              aria-label={`Incident bottom sheet currently in ${sheetState} mode. Tap to cycle.`}
+            >
+              <div className="w-12 h-1.5 rounded-full bg-neutral-black-12 mb-1.5" />
+              <div className="w-full px-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-md-red" />
+                  <span className="text-xs font-black text-content-primary">
+                    {mappableIssues.length} Incidents Near You
+                  </span>
                 </div>
-              ))
-            ) : mappableIssues.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center space-y-3 py-12">
-                <MapPin className="w-10 h-10 text-slate-700" />
-                <p className="text-slate-400 text-sm">No issues found matching filters.</p>
-                <button
-                  onClick={() => { setSelectedCategory('ALL'); setSelectedStatus('ALL'); }}
-                  className="text-xs text-blue-400 underline"
-                >
-                  Clear filters
-                </button>
-              </div>
-            ) : (
-              mappableIssues.map((issue) => (
-                <button
-                  key={issue.id}
-                  onClick={() => setSelectedIssue(selectedIssue?.id === issue.id ? null : issue)}
-                  className={`w-full text-left p-4 rounded-xl border transition-all space-y-2 ${
-                    selectedIssue?.id === issue.id
-                      ? 'bg-blue-600/20 border-blue-500/60 shadow-lg shadow-blue-500/10'
-                      : 'bg-slate-900/80 border-slate-800 hover:border-blue-500/40'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-950 text-slate-400 border border-slate-800 truncate">
-                      {issue.id}
-                    </span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${
-                      issue.severity === 'CRITICAL'
-                        ? 'bg-rose-500/20 text-rose-400'
-                        : issue.severity === 'HIGH'
-                        ? 'bg-amber-500/20 text-amber-400'
-                        : issue.severity === 'MEDIUM'
-                        ? 'bg-yellow-500/20 text-yellow-400'
-                        : 'bg-slate-500/20 text-slate-400'
-                    }`}>
-                      {issue.severity}
-                    </span>
-                  </div>
-
-                  <h3 className="font-semibold text-white text-sm leading-tight">{issue.title}</h3>
-
-                  {issue.location && (
-                    <div className="text-xs text-slate-400 truncate">
-                      📍 {issue.location.address || `${issue.location.latitude?.toFixed(4)}, ${issue.location.longitude?.toFixed(4)}`}
-                    </div>
+                <div className="flex items-center gap-1 text-content-secondary text-xs font-bold">
+                  <span>{sheetState === 'peek' ? 'Expand' : sheetState === 'half' ? 'Full' : 'Close'}</span>
+                  {sheetState === 'peek' ? (
+                    <ChevronUp className="w-4 h-4" />
+                  ) : sheetState === 'half' ? (
+                    <Maximize2 className="w-3.5 h-3.5" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4" />
                   )}
+                </div>
+              </div>
+            </div>
 
-                  <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-800/60">
-                    <span className="text-slate-400">
-                      👥 {issue.report_count ?? 1} Reports
-                    </span>
-                    <span className={`font-semibold ${
-                      issue.status === 'RESOLVED'
-                        ? 'text-emerald-400'
-                        : issue.status === 'IN_PROGRESS'
-                        ? 'text-blue-400'
-                        : issue.status === 'VERIFICATION'
-                        ? 'text-amber-400'
-                        : 'text-slate-300'
-                    }`}>
-                      {issue.status?.replace('_', ' ')}
-                    </span>
-                  </div>
-                </button>
-              ))
+            {/* If in Peek Mode: Show Selected Issue Preview */}
+            {sheetState === 'peek' && selectedIssue && (
+              <div className="px-4 pb-2 truncate">
+                <div className="text-xs font-bold text-content-primary truncate">
+                  Target: {selectedIssue.title}
+                </div>
+              </div>
+            )}
+
+            {/* Scrollable Incident Feed within Bottom Sheet */}
+            {sheetState !== 'peek' && (
+              <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-2.5 mt-1">
+                {mappableIssues.map((issue) => {
+                  const isSelected = selectedIssue?.id === issue.id;
+                  return (
+                    <button
+                      key={issue.id}
+                      onClick={() => {
+                        setSelectedIssue(isSelected ? null : issue);
+                        setSheetState('peek'); // Snap to peek so user sees pin centered on map
+                      }}
+                      className={`w-full text-left p-3.5 rounded-2xl border transition-all space-y-1.5 ${
+                        isSelected
+                          ? 'border-md-gold bg-md-gold-subtle shadow-sm'
+                          : 'border-surface-border bg-surface-card'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-neutral-black-06 text-content-secondary">
+                          {issue.id}
+                        </span>
+                        <StatusBadge status={issue.status} size="sm" />
+                      </div>
+                      <h4 className="font-bold text-xs text-content-primary line-clamp-1">{issue.title}</h4>
+                      <p className="text-[11px] text-content-secondary truncate">{issue.location?.address}</p>
+                    </button>
+                  );
+                })}
+              </div>
             )}
           </div>
+
         </div>
-      </div>
+      )}
+
     </div>
   );
 }
 
 export default function PublicMapPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-slate-400">Loading city map...</div>}>
+    <Suspense fallback={<div className="p-8 text-content-muted font-bold">Loading public infrastructure map...</div>}>
       <MapPageContent />
     </Suspense>
   );
