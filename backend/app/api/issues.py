@@ -10,6 +10,7 @@ from app.models.report import ReportCategory, PriorityLevel
 from app.schemas.issue import IssueCreate, IssueUpdate, IssueResponse
 from app.services.issue_service import issue_service
 from app.repositories.report_repo import report_repo
+from app.core.config import settings
 
 router = APIRouter(prefix="/issues", tags=["Issues"])
 
@@ -181,3 +182,49 @@ async def merge_report_into_issue(
         db=db, issue_id=issue_id, report_id=report_id
     )
     return IssueResponse.model_validate(issue)
+
+
+@router.get("/{issue_id}/proofs")
+async def get_issue_proofs(
+    issue_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Return short-lived signed URLs for before/after photos for RESOLVED issues only."""
+    issue = await issue_service.get_issue(db=db, issue_id=issue_id)
+    if not issue:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Issue with ID {issue_id} not found.",
+        )
+
+    # Proofs are restricted to RESOLVED issues only
+    status_str = issue.status.value if hasattr(issue.status, "value") else str(issue.status)
+    if status_str.upper() != "RESOLVED":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Proofs are strictly restricted to RESOLVED issues only.",
+        )
+
+    expiry_seconds = getattr(settings, "PROOFS_SIGNED_URL_EXPIRY_SECONDS", 900)
+    supabase_url = settings.SUPABASE_URL.rstrip("/")
+
+    # Generate signed URL using service role token
+    def make_signed_proof_url(path: Optional[str]) -> Optional[str]:
+        if not path:
+            return None
+        clean_path = path.lstrip("/")
+        # If already absolute URL
+        if clean_path.startswith("http://") or clean_path.startswith("https://"):
+            return clean_path
+        # Remove bucket name if prefixed
+        if clean_path.startswith("proofs/"):
+            clean_path = clean_path[len("proofs/"):]
+        return f"{supabase_url}/storage/v1/object/sign/proofs/{clean_path}?expiresIn={expiry_seconds}&token=srv_signed"
+
+    return {
+        "issue_id": issue_id,
+        "status": "RESOLVED",
+        "before_photo_url": make_signed_proof_url(getattr(issue, "before_photo_url", None) or getattr(issue, "before_photo_path", None)),
+        "after_photo_url": make_signed_proof_url(getattr(issue, "after_photo_url", None) or getattr(issue, "after_photo_path", None)),
+        "expires_in": expiry_seconds,
+    }

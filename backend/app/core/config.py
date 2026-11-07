@@ -41,6 +41,21 @@ class Settings(BaseSettings):
     AI_DUPLICATE_TIME_DAYS: int = 14
     AI_DUPLICATE_THRESHOLD: float = 0.70
 
+    # Supabase & Async Pipeline Settings
+    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "https://tywmyjecafmpufdfxbus.supabase.co")
+    SUPABASE_PUBLISHABLE_KEY: str = os.getenv("SUPABASE_PUBLISHABLE_KEY", "sb_publishable_dSoVH6SAgzYJ7dWeo_drOg_UCcqNmuw")
+    SUPABASE_SECRET_KEY: str = os.getenv(
+        "SUPABASE_SECRET_KEY", "dev-placeholder-secret-key-not-for-production"
+    )
+    SUPABASE_JWKS_URL: str = os.getenv(
+        "SUPABASE_JWKS_URL",
+        "https://tywmyjecafmpufdfxbus.supabase.co/auth/v1/.well-known/jwks.json",
+    )
+    # Feature flag to switch between async 202 ingestion and legacy synchronous pipeline
+    NEXT_PUBLIC_ASYNC_REPORTS: bool = os.getenv("NEXT_PUBLIC_ASYNC_REPORTS", "true").lower() in ("true", "1", "yes")
+    REPORTS_RATE_LIMIT_PER_MINUTE: int = int(os.getenv("REPORTS_RATE_LIMIT_PER_MINUTE", "10"))
+    PROOFS_SIGNED_URL_EXPIRY_SECONDS: int = int(os.getenv("PROOFS_SIGNED_URL_EXPIRY_SECONDS", "900"))
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

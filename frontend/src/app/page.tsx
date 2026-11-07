@@ -15,6 +15,7 @@ import {
 import { analyticsApi, issueApi, reportApi } from '@/lib/api';
 import type { Issue } from '@/types';
 import StatusBadge from '@/components/ui/StatusBadge';
+import CursorAmbient from '@/components/glass/CursorAmbient';
 
 // Dynamically import GoogleMapView for the live mini-map to avoid SSR conflicts
 const GoogleMapView = dynamic(() => import('@/components/map/GoogleMapView'), {
@@ -141,7 +142,9 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="space-y-16 py-4 sm:py-8">
+    <div className="space-y-1 py-4 sm:py-8">
+      {/* Subtle Cursor-Following Ambient Layer (Compositor-Only, z-index: -1) */}
+      <CursorAmbient />
       
       {/* ========================================================================= */}
       {/* PHASE 2 REQUIREMENT 1: SPLIT HERO WITH HEADLINE/CTAS & LIVE MINI-MAP      */}
@@ -149,6 +152,15 @@ export default function LandingPage() {
       <section className="surface-card-solid p-6 sm:p-10 lg:p-12 relative overflow-hidden rounded-3xl border border-surface-border shadow-card">
         {/* Subtle Maryland Accent Top Edge Stripe */}
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-md-red via-md-gold to-md-red" />
+
+        {/* Ambient Top-Right Luminous Spill (Mirrors background sunset atmosphere) */}
+        <div 
+          className="absolute -top-16 -right-16 w-[560px] h-[420px] pointer-events-none rounded-tr-3xl"
+          style={{
+            background: 'radial-gradient(circle at 80% 20%, rgba(255, 199, 44, 0.16) 0%, rgba(224, 58, 62, 0.06) 42%, transparent 72%)',
+          }}
+          aria-hidden="true"
+        />
         
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           

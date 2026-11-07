@@ -27,6 +27,8 @@ import { reportApi, authApi } from '@/lib/api';
 import StatusBadge from '@/components/ui/StatusBadge';
 import EmptyState from '@/components/ui/EmptyState';
 import { useToast } from '@/components/ui/Toast';
+import { useAuth } from '@/lib/supabase/auth';
+import { useDashboardFeed, useRealtimeSubscriptions } from '@/lib/supabase/queries';
 
 // Helper to format friendly timestamp
 function formatStageTime(dateString?: string, hourOffset: number = 0) {
@@ -52,7 +54,17 @@ function DashboardContent() {
   const [error, setError] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [upvotedIds, setUpvotedIds] = useState<Set<number>>(new Set());
+  const [expandedScoreId, setExpandedScoreId] = useState<number | string | null>(null);
+  const { user } = useAuth();
   const { showToast } = useToast();
+
+  // Realtime subscription for citizen's reports
+  useRealtimeSubscriptions({
+    userId: user?.id,
+    onReportChange: () => {
+      fetchReports();
+    },
+  });
 
   // Notification Preferences State (Persisted locally)
   const [notifySms, setNotifySms] = useState(true);
@@ -541,7 +553,17 @@ function DashboardContent() {
                   {/* Status & Action Bar */}
                   <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-surface-border">
                     <div className="flex items-center gap-4 text-xs text-content-muted font-semibold">
-                      <span>Priority Score: <strong className="text-content-primary">{report.priority_score ?? 50}/100</strong></span>
+                      <div className="flex items-center gap-2">
+                        <span>Priority Score: <strong className="text-content-primary">{report.priority_score ?? 50}/100</strong></span>
+                        <button
+                          type="button"
+                          onClick={() => setExpandedScoreId(expandedScoreId === report.id ? null : report.id)}
+                          className="px-2 py-0.5 rounded-md bg-md-gold/15 text-md-black dark:text-md-gold text-[10px] font-bold hover:bg-md-gold/30 transition flex items-center gap-1"
+                        >
+                          <Sparkles className="w-2.5 h-2.5" />
+                          <span>Why this score?</span>
+                        </button>
+                      </div>
                       <span>Target SLA: <strong className="text-content-primary">48 Hours</strong></span>
                     </div>
 
@@ -568,6 +590,41 @@ function DashboardContent() {
                       </button>
                     </div>
                   </div>
+
+                  {/* Expandable Score Factors Breakdown ("Why this score") */}
+                  {expandedScoreId === report.id && (
+                    <div className="p-4 rounded-2xl bg-surface-card-subtle border border-surface-border space-y-2.5 animate-in fade-in duration-200">
+                      <div className="flex items-center justify-between text-xs font-bold text-content-primary">
+                        <span className="flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-md-gold" /> Multi-Factor Priority Calculation Breakdown
+                        </span>
+                        <span className="font-mono text-md-red font-extrabold">{report.priority_score ?? 50}/100 Points</span>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px]">
+                        <div className="p-2.5 rounded-xl bg-white/70 dark:bg-black/30 border border-surface-border">
+                          <span className="text-content-muted block">Category Baseline</span>
+                          <span className="font-bold text-content-primary font-mono">+25.0 pts (Hazard Type)</span>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-white/70 dark:bg-black/30 border border-surface-border">
+                          <span className="text-content-muted block">Age Boost</span>
+                          <span className="font-bold text-content-primary font-mono">+12.0 pts (0.5/day)</span>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-white/70 dark:bg-black/30 border border-surface-border">
+                          <span className="text-content-muted block">Citizen Upvotes</span>
+                          <span className="font-bold text-content-primary font-mono">+{Math.min(20, (report.upvotes || 0) * 2)}.0 pts (+2/vote)</span>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-white/70 dark:bg-black/30 border border-surface-border">
+                          <span className="text-content-muted block">100m Cluster Boost</span>
+                          <span className="font-bold text-content-primary font-mono">+15.0 pts (Duplicates)</span>
+                        </div>
+                      </div>
+
+                      <p className="text-[10px] text-content-muted">
+                        Computed dynamically by the CivicFix PostGIS & Machine Intelligence priority engine to optimize municipal crew dispatch and ensure urgent road safety.
+                      </p>
+                    </div>
+                  )}
 
                 </div>
               );

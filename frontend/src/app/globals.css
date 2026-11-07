@@ -8,13 +8,14 @@
 
 @layer base {
   html {
+    background-color: var(--surface-canvas);
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   body {
-    background-color: var(--surface-canvas);
+    background-color: transparent;
     color: var(--text-primary);
     font-family: 'Public Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     min-height: 100vh;
@@ -46,33 +47,49 @@
   overflow: hidden;
 }
 
-.md-mesh-backdrop-gold {
+/* 1. Primary Coral-Red Radiant Top-Right Aura (Warm Maryland Sunset Glow) */
+.md-mesh-backdrop-red-top {
+  position: absolute;
+  top: -16%;
+  right: -8%;
+  width: 60vw;
+  height: 60vh;
+  max-width: 800px;
+  max-height: 800px;
+  background: var(--mesh-red-top);
+  filter: blur(75px);
+  will-change: transform;
+}
+
+/* 2. Luminous Golden-Amber Sunlight Blob (Top-Right Core) */
+.md-mesh-backdrop-gold-top {
   position: absolute;
   top: -10%;
-  right: -5%;
+  right: 2%;
+  width: 65vw;
+  height: 65vh;
+  max-width: 850px;
+  max-height: 850px;
+  background: var(--mesh-gold-top);
+  filter: blur(65px);
+  will-change: transform;
+}
+
+/* 3. Soft Ambient Bottom-Left Reflection (Muted balance) */
+.md-mesh-backdrop-bottom {
+  position: absolute;
+  bottom: -15%;
+  left: -8%;
   width: 65vw;
   height: 65vh;
   max-width: 800px;
   max-height: 800px;
-  background: var(--mesh-gold-blob);
-  filter: blur(60px);
+  background: var(--mesh-bottom-ambient);
+  filter: blur(85px);
   will-change: transform;
 }
 
-.md-mesh-backdrop-red {
-  position: absolute;
-  bottom: -15%;
-  left: -5%;
-  width: 70vw;
-  height: 70vh;
-  max-width: 850px;
-  max-height: 850px;
-  background: var(--mesh-red-blob);
-  filter: blur(80px);
-  will-change: transform;
-}
-
-/* Faint Quartered Maryland Flag Heritage Motif (<6% opacity watermark) */
+/* Faint Quartered Maryland Flag Heritage Motif (Gracefully masked down the left flank) */
 .md-flag-watermark {
   position: absolute;
   inset: 0;
@@ -85,6 +102,8 @@
     linear-gradient(-45deg, transparent 75%, #0b0b0c 75%);
   background-size: 32px 32px;
   background-position: 0 0, 0 16px, 16px -16px, -16px 0px;
+  mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.75) 16%, rgba(0, 0, 0, 0.15) 36%, rgba(0, 0, 0, 0) 58%);
+  -webkit-mask-image: linear-gradient(to right, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.75) 16%, rgba(0, 0, 0, 0.15) 36%, rgba(0, 0, 0, 0) 58%);
 }
 
 /* ==========================================================================
