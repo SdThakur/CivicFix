@@ -11,10 +11,9 @@ Tests:
 
 import asyncio
 from datetime import datetime, timezone, timedelta
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 import pytest
-from httpx import AsyncClient, ASGITransport
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import HTTPException
 
 from app.core.circuit_breaker import (
     CircuitBreaker,
@@ -22,15 +21,14 @@ from app.core.circuit_breaker import (
     call_with_timeout,
     retry_with_jitter,
 )
-from app.core.jwks import verify_supabase_jwt, authenticate_request_jwt
+from app.core.jwks import verify_supabase_jwt
 from app.worker import process_report_job
 from app.models.report import ReportStatus
 from reports_api import (
-    router as reports_router,
     _in_memory_reports,
     _in_memory_issues,
 )
-from tests.api.test_redis_limits import MockRateLimiter, create_token
+from tests.api.test_redis_limits import create_token
 
 
 @pytest.fixture
@@ -70,7 +68,9 @@ async def test_circuit_breaker_trips_to_open_after_n_failures():
 @pytest.mark.asyncio
 async def test_circuit_breaker_recovers_after_cooldown():
     """After cooldown period elapses, circuit enters HALF_OPEN and resets on success."""
-    cb = CircuitBreaker(name="test_recover_cb", failure_threshold=2, cooldown_seconds=0.1)
+    cb = CircuitBreaker(
+        name="test_recover_cb", failure_threshold=2, cooldown_seconds=0.1
+    )
 
     # Trip to OPEN
     await cb.record_failure()
@@ -107,7 +107,9 @@ async def test_worker_triages_to_pending_manual_when_circuit_open(clean_state):
     }
 
     # Force circuit breaker to OPEN state
-    with patch.object(gemini_circuit_breaker, "can_execute", new=AsyncMock(return_value=False)):
+    with patch.object(
+        gemini_circuit_breaker, "can_execute", new=AsyncMock(return_value=False)
+    ):
         ctx = {"redis": None, "job_id": f"report:{report_id}"}
         result = await process_report_job(ctx, report_id)
 
@@ -144,7 +146,9 @@ def test_local_jwt_verification_rejects_expired():
         "role": "authenticated",
         "exp": int((datetime.now(timezone.utc) - timedelta(hours=1)).timestamp()),
     }
-    expired_token = jwt.encode(expired_payload, settings.SUPABASE_SECRET_KEY, algorithm="HS256")
+    expired_token = jwt.encode(
+        expired_payload, settings.SUPABASE_SECRET_KEY, algorithm="HS256"
+    )
 
     with pytest.raises(HTTPException) as exc_info:
         verify_supabase_jwt(expired_token)
@@ -155,8 +159,9 @@ def test_local_jwt_verification_rejects_expired():
 def test_local_jwt_verification_rejects_tampered_signature():
     """Tampered token signature is rejected with HTTP 401."""
     token = create_token("legit-user")
-    # Tamper with signature
-    tampered = token[:-5] + "XXXXX"
+    parts = token.split(".")
+    new_char = "b" if parts[2][-1] != "b" else "c"
+    tampered = f"{parts[0]}.{parts[1]}.{parts[2][:-1]}{new_char}"
 
     with pytest.raises(HTTPException) as exc_info:
         verify_supabase_jwt(tampered)
@@ -168,6 +173,7 @@ def test_local_jwt_verification_rejects_tampered_signature():
 @pytest.mark.asyncio
 async def test_call_with_timeout_enforces_limit():
     """call_with_timeout raises TimeoutError when external call exceeds deadline."""
+
     async def slow_external_api():
         await asyncio.sleep(0.2)
         return "slow_success"
@@ -199,4 +205,3 @@ async def test_retry_with_jitter_recovers_transient_failure():
 
     assert result == "success_recovered"
     assert attempts == 3
-
