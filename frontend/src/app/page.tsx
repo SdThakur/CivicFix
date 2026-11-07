@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { 
   Camera, 
@@ -169,7 +170,9 @@ export default function LandingPage() {
             
             {/* Operational Standard Pill */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-gold text-xs font-bold tracking-tight shadow-sm text-md-black">
-              <ShieldAlert className="w-3.5 h-3.5 text-md-black" />
+              <div className="w-4 h-4 rounded-full overflow-hidden bg-white/90 p-0.5 flex items-center justify-center shadow-xs">
+                <Image src="/logo.png" alt="" width={14} height={14} className="w-full h-full object-contain" />
+              </div>
               <span>Maryland Civic Operations Standard</span>
             </div>
 

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
   ShieldAlert, 
@@ -84,10 +85,17 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
           
-          {/* Logo with Maryland Heraldic Accent */}
+          {/* Logo with Brand Emblem */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-md-red text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-              <ShieldAlert className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl overflow-hidden bg-white/95 border border-surface-border p-1 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+              <Image
+                src="/logo.png"
+                alt="CivicFix Logo"
+                width={36}
+                height={36}
+                className="w-full h-full object-contain"
+                priority
+              />
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-1">
