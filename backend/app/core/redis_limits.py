@@ -256,3 +256,4 @@ def rate_limit(
                 )
 
     return dependency
+

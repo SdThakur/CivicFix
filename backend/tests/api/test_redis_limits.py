@@ -296,3 +296,4 @@ async def test_daily_gemini_budget_guard(setup_test_state):
         data = res.json()
         assert data["status"] == "PENDING"
         assert "Daily AI triage cap reached" in data["message"]
+

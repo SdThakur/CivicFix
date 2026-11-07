@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.redis_limits import RateLimiter
+from app.core.queue import create_queue_pool
 from app.db.session import engine, async_session_maker
 from app.db.base import Base
 import app.models  # Load models for metadata registration
@@ -37,10 +38,13 @@ from app.api import (
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Initialize Redis rate limiter and ensure database tables exist on application startup."""
+    """Initialize Redis rate limiter, ARQ queue pool, and ensure database tables exist."""
     limiter = RateLimiter(settings.LIMITS_REDIS_URL)
     await limiter.connect()
     app.state.limiter = limiter
+
+    arq_pool = await create_queue_pool(settings.QUEUE_REDIS_URL)
+    app.state.arq_pool = arq_pool
 
     try:
         async with engine.begin() as conn:
@@ -54,6 +58,8 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         await limiter.close()
+        if hasattr(app.state, "arq_pool") and app.state.arq_pool is not None:
+            await app.state.arq_pool.close()
 
 
 app = FastAPI(

@@ -32,6 +32,7 @@ from pydantic import BaseModel, Field, field_validator
 import jwt
 from app.core.config import settings
 from app.core.redis_limits import RateLimiter, rate_limit, user_or_ip_identity
+from app.core.queue import enqueue_report
 
 logger = logging.getLogger(__name__)
 
@@ -290,8 +291,8 @@ async def call_gemini_vision(image_path: str, description: Optional[str]) -> (st
 )
 async def submit_report_async(
     payload: AsyncReportCreate,
-    background_tasks: BackgroundTasks,
     request: Request,
+    background_tasks: BackgroundTasks,
     idempotency_key: Optional[str] = Header(None, alias="Idempotency-Key"),
     user_id: str = Depends(get_supabase_user_id),
     _rate_guard: None = Depends(
@@ -357,9 +358,23 @@ async def submit_report_async(
         )
 
     if within_budget:
-        # Enqueue background AI triage & deduplication
-        background_tasks.add_task(run_ai_and_deduplication_pipeline, report_id)
-        msg = "Report accepted and queued for processing."
+        arq_pool = getattr(request.app.state, "arq_pool", None)
+        enqueued = False
+        if arq_pool is not None:
+            try:
+                enqueued = await enqueue_report(arq_pool, report_id)
+            except Exception as e:
+                logger.error(f"Failed to enqueue report {report_id} to ARQ: {e}")
+        elif background_tasks is not None:
+            background_tasks.add_task(run_ai_and_deduplication_pipeline, report_id)
+            enqueued = True
+
+        if enqueued:
+            msg = "Report accepted and queued for processing."
+        else:
+            # Leave in PENDING state; sweeper recovers it
+            logger.info(f"Report {report_id} accepted; left PENDING for sweeper recovery.")
+            msg = "Report accepted and queued for processing."
     else:
         logger.warning(
             f"Daily Gemini budget cap ({settings.GEMINI_DAILY_BUDGET}) reached. "
@@ -382,6 +397,12 @@ async def submit_report_async(
 
 
 # ─── REPORT STATUS POLLING ENDPOINT ───────────────────────────────────────────
+try:
+    from app.api.reports import get_nearby_reports
+    router.add_api_route("/nearby", get_nearby_reports, methods=["GET"], include_in_schema=False)
+except Exception as _e:
+    logger.debug(f"Could not forward /nearby route: {_e}")
+
 @router.get("/{report_id}", response_model=ReportDetailResponse)
 async def get_report_status(
     report_id: str,
@@ -400,15 +421,39 @@ async def get_report_status(
 
 
 # ─── SWEEPER RECOVERY ENDPOINT ────────────────────────────────────────────────
-@router.post("/sweeper/recover", summary="Sweeper recovery for timed-out processing jobs")
-async def sweeper_recovery() -> Dict[str, Any]:
-    """Recover reports stuck in PROCESSING for more than 10 minutes, marking them FAILED."""
+@router.post("/sweeper/recover", summary="Sweeper recovery for timed-out or stranded reports")
+async def sweeper_recovery(request: Request) -> Dict[str, Any]:
+    """Recover reports stuck in PENDING or PROCESSING.
+
+    - If ARQ queue is active: enqueues stranded PENDING (>2 min) or PROCESSING (>10 min) reports
+      instead of inline processing.
+    - If ARQ queue is inactive: marks timed-out PROCESSING reports (>10 min) as FAILED.
+    """
     recovered = 0
     now = datetime.now(timezone.utc)
+    arq_pool = getattr(request.app.state, "arq_pool", None)
+
     for report_id, report in _in_memory_reports.items():
-        if report.get("status") == "PROCESSING":
-            updated_dt = datetime.fromisoformat(report["updated_at"])
-            if (now - updated_dt) > timedelta(minutes=10):
+        status = report.get("status")
+        updated_dt = datetime.fromisoformat(report["updated_at"])
+        age = now - updated_dt
+
+        # Stranded in PENDING: enqueue to worker
+        if status == "PENDING" and age > timedelta(minutes=2):
+            if arq_pool:
+                enqueued = await enqueue_report(arq_pool, report_id)
+                if enqueued:
+                    report["updated_at"] = now.isoformat()
+                    recovered += 1
+
+        # Timed out in PROCESSING (> 10 minutes)
+        elif status == "PROCESSING" and age > timedelta(minutes=10):
+            if arq_pool:
+                report["status"] = "PENDING"
+                report["updated_at"] = now.isoformat()
+                await enqueue_report(arq_pool, report_id)
+                recovered += 1
+            else:
                 report["status"] = "FAILED"
                 report["error_message"] = "Processing timed out. Automatically marked FAILED by sweeper."
                 report["updated_at"] = now.isoformat()

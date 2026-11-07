@@ -10,6 +10,7 @@ geoalchemy2>=0.14.0
 shapely>=2.0.0
 alembic>=1.13.0
 celery[redis]>=5.3.6
+arq>=0.25.0
 redis>=5.0.0
 passlib[bcrypt]>=1.7.4
 bcrypt>=4.1.2
