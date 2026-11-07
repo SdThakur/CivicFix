@@ -31,6 +31,7 @@ from fastapi import (
 from pydantic import BaseModel, Field, field_validator
 import jwt
 from app.core.config import settings
+from app.core.redis_limits import RateLimiter, rate_limit, user_or_ip_identity
 
 logger = logging.getLogger(__name__)
 
@@ -91,6 +92,7 @@ class ReportDetailResponse(BaseModel):
 
 # ─── AUTHENTICATION DEPENDENCY (SUPABASE JWT) ─────────────────────────────────
 async def get_supabase_user_id(
+    request: Request,
     authorization: Optional[str] = Header(None, alias="Authorization"),
 ) -> str:
     """Validate Supabase Bearer token and extract user_id (sub)."""
@@ -123,6 +125,17 @@ async def get_supabase_user_id(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token does not contain a valid user identity (sub).",
             )
+
+        # Detect whether user is anonymous
+        is_anon = bool(
+            payload.get("is_anonymous")
+            or payload.get("app_metadata", {}).get("is_anonymous")
+            or payload.get("app_metadata", {}).get("provider") == "anonymous"
+            or payload.get("role") == "anon"
+        )
+        request.state.user_id = str(user_id)
+        request.state.is_anonymous = is_anon
+
         return str(user_id)
     except Exception as e:
         logger.warning(f"Failed to decode Supabase JWT: {e}")
@@ -132,19 +145,24 @@ async def get_supabase_user_id(
         )
 
 
-# ─── RATE LIMITER CHECK ───────────────────────────────────────────────────────
-def check_rate_limit(user_id: str) -> None:
-    """Enforce rate limits per user_id."""
+# ─── DATABASE RATE LIMITER CHECK (DEFENSE IN DEPTH) ───────────────────────────
+def check_database_rate_limit(user_id: str, is_anonymous: bool = False) -> None:
+    """Secondary database/memory rate limit count guard."""
     now = time.time()
-    window = 60.0  # 1 minute window
-    limit = settings.REPORTS_RATE_LIMIT_PER_MINUTE
+    window = float(settings.REPORTS_RATE_LIMIT_WINDOW_SECONDS)
+    limit = (
+        settings.REPORTS_RATE_LIMIT_ANONYMOUS
+        if is_anonymous
+        else settings.REPORTS_RATE_LIMIT_SIGNED_IN
+    )
 
     # Prune timestamps older than window
     timestamps = [t for t in _rate_limits[user_id] if now - t < window]
     if len(timestamps) >= limit:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=f"Rate limit exceeded. Maximum {limit} reports per minute allowed.",
+            detail=f"Rate limit exceeded (secondary guard). Maximum {limit} reports per hour allowed.",
+            headers={"Retry-After": str(int(window))},
         )
     timestamps.append(now)
     _rate_limits[user_id] = timestamps
@@ -273,16 +291,36 @@ async def call_gemini_vision(image_path: str, description: Optional[str]) -> (st
 async def submit_report_async(
     payload: AsyncReportCreate,
     background_tasks: BackgroundTasks,
+    request: Request,
+    idempotency_key: Optional[str] = Header(None, alias="Idempotency-Key"),
     user_id: str = Depends(get_supabase_user_id),
+    _rate_guard: None = Depends(
+        rate_limit(
+            signed_in_limit=settings.REPORTS_RATE_LIMIT_SIGNED_IN,
+            anonymous_limit=settings.REPORTS_RATE_LIMIT_ANONYMOUS,
+            window_seconds=settings.REPORTS_RATE_LIMIT_WINDOW_SECONDS,
+            fail_open=False,
+        )
+    ),
 ) -> AsyncReportResponse:
-    """Submit a report asynchronously.
+    """Submit a report asynchronously with Redis rate limiting & idempotency protection.
 
     Returns HTTP 202 immediately. Triage, deduplication, and issue linking occur in the background.
     """
-    # 1. Rate limiting check (HTTP 429)
-    check_rate_limit(user_id)
+    limiter: Optional[RateLimiter] = getattr(request.app.state, "limiter", None)
+    identity, is_anon = user_or_ip_identity(request)
 
-    # 2. Image Path Ownership Check (HTTP 403 Forbidden on foreign image path)
+    # 1. Idempotency Check (returns cached response if key already processed)
+    if idempotency_key and limiter:
+        cached = await limiter.get_idempotent_response(idempotency_key, identity)
+        if cached:
+            logger.info(f"Idempotent hit for key {idempotency_key} by {identity}. Returning cached report.")
+            return AsyncReportResponse(**cached)
+
+    # 2. Secondary Database Rate Limiting Check (Defense in depth)
+    check_database_rate_limit(user_id, is_anon)
+
+    # 3. Image Path Ownership Check (HTTP 403 Forbidden on foreign image path)
     expected_prefix = f"reports/{user_id}/"
     if not payload.image_path.startswith(expected_prefix):
         raise HTTPException(
@@ -290,7 +328,7 @@ async def submit_report_async(
             detail=f"Foreign image_path forbidden. Path must start with '{expected_prefix}'.",
         )
 
-    # 3. Create Report in PENDING state
+    # 4. Create Report in PENDING state
     report_id = str(uuid.uuid4())
     now_str = datetime.now(timezone.utc).isoformat()
 
@@ -311,15 +349,36 @@ async def submit_report_async(
         "updated_at": now_str,
     }
 
-    # 4. Dispatch background AI triage & deduplication
-    background_tasks.add_task(run_ai_and_deduplication_pipeline, report_id)
+    # 5. Gemini Daily Budget Guard Check
+    within_budget = True
+    if limiter:
+        within_budget = await limiter.check_gemini_daily_budget(
+            max_daily_budget=settings.GEMINI_DAILY_BUDGET
+        )
 
-    return AsyncReportResponse(
+    if within_budget:
+        # Enqueue background AI triage & deduplication
+        background_tasks.add_task(run_ai_and_deduplication_pipeline, report_id)
+        msg = "Report accepted and queued for processing."
+    else:
+        logger.warning(
+            f"Daily Gemini budget cap ({settings.GEMINI_DAILY_BUDGET}) reached. "
+            f"Report {report_id} will remain PENDING."
+        )
+        msg = "Report accepted and queued (Daily AI triage cap reached; queued for review)."
+
+    response = AsyncReportResponse(
         id=report_id,
         status="PENDING",
-        message="Report accepted and queued for processing.",
+        message=msg,
         created_at=now_str,
     )
+
+    # 6. Store idempotent response in Redis
+    if idempotency_key and limiter:
+        await limiter.set_idempotent_response(idempotency_key, identity, response.model_dump())
+
+    return response
 
 
 # ─── REPORT STATUS POLLING ENDPOINT ───────────────────────────────────────────

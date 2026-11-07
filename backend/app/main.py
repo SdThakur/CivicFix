@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
+from app.core.redis_limits import RateLimiter
 from app.db.session import engine, async_session_maker
 from app.db.base import Base
 import app.models  # Load models for metadata registration
@@ -36,7 +37,11 @@ from app.api import (
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Ensure database tables exist on application startup."""
+    """Initialize Redis rate limiter and ensure database tables exist on application startup."""
+    limiter = RateLimiter(settings.LIMITS_REDIS_URL)
+    await limiter.connect()
+    app.state.limiter = limiter
+
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
@@ -44,7 +49,11 @@ async def lifespan(app: FastAPI):
             await SLAService.seed_default_rules(session)
     except Exception as e:
         print(f"[CivicFix Startup Warning] Could not auto-create tables: {e}")
-    yield
+
+    try:
+        yield
+    finally:
+        await limiter.close()
 
 
 app = FastAPI(

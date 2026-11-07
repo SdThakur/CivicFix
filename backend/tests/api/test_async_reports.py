@@ -25,6 +25,7 @@ from reports_api import (
     _rate_limits,
     run_ai_and_deduplication_pipeline,
 )
+from tests.api.test_redis_limits import MockRateLimiter
 
 async_test_app = FastAPI(title="CivicFix Async Ingestion Test App")
 async_test_app.include_router(reports_api.router, prefix="/api/v1")
@@ -36,10 +37,12 @@ def clean_state():
     _in_memory_reports.clear()
     _in_memory_issues.clear()
     _rate_limits.clear()
+    async_test_app.state.limiter = MockRateLimiter(connected=True)
     yield
     _in_memory_reports.clear()
     _in_memory_issues.clear()
     _rate_limits.clear()
+    async_test_app.state.limiter = None
 
 
 @pytest.fixture

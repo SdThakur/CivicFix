@@ -56,6 +56,14 @@ class Settings(BaseSettings):
     REPORTS_RATE_LIMIT_PER_MINUTE: int = int(os.getenv("REPORTS_RATE_LIMIT_PER_MINUTE", "10"))
     PROOFS_SIGNED_URL_EXPIRY_SECONDS: int = int(os.getenv("PROOFS_SIGNED_URL_EXPIRY_SECONDS", "900"))
 
+    # Redis Scaling & Rate Limiting Settings
+    LIMITS_REDIS_URL: str = os.getenv("LIMITS_REDIS_URL", os.getenv("REDIS_URL", "redis://localhost:6379/1"))
+    QUEUE_REDIS_URL: str = os.getenv("QUEUE_REDIS_URL", os.getenv("REDIS_URL", "redis://localhost:6379/0"))
+    GEMINI_DAILY_BUDGET: int = int(os.getenv("GEMINI_DAILY_BUDGET", "500"))
+    REPORTS_RATE_LIMIT_SIGNED_IN: int = int(os.getenv("REPORTS_RATE_LIMIT_SIGNED_IN", "10"))
+    REPORTS_RATE_LIMIT_ANONYMOUS: int = int(os.getenv("REPORTS_RATE_LIMIT_ANONYMOUS", "3"))
+    REPORTS_RATE_LIMIT_WINDOW_SECONDS: int = int(os.getenv("REPORTS_RATE_LIMIT_WINDOW_SECONDS", "3600"))
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
