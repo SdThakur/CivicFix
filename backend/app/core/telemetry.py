@@ -49,3 +49,4 @@ def setup_telemetry(service_name: str = "civicfix-backend") -> trace.Tracer:
 
 
 tracer = setup_telemetry()
+

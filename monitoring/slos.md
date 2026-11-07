@@ -57,3 +57,4 @@ Operational reliability and performance contracts for the CivicFix infrastructur
     sum(rate(civicfix_http_requests_total[30d]))
   ) >= 0.999
   ```
+

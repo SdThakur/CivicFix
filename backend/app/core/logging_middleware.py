@@ -99,3 +99,4 @@ class ObservabilityMiddleware(BaseHTTPMiddleware):
             # 6. Ensure X-Request-ID is attached to outbound response headers
             if response is not None:
                 response.headers["X-Request-ID"] = request_id
+

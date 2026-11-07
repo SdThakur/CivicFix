@@ -72,3 +72,4 @@ groups:
           summary: "Gemini AI circuit breaker tripped to OPEN"
           description: "Outbound Gemini Vision AI calls are failing. Circuit breaker tripped; reports routing to PENDING_MANUAL dispatcher queue."
           runbook_url: "https://github.com/SdThakur/CivicFix/wiki/runbook#circuit-breaker"
+

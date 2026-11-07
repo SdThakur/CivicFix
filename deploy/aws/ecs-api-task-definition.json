@@ -1,0 +1,64 @@
+{
+  "family": "civicfix-api",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "1024",
+  "memory": "2048",
+  "executionRoleArn": "arn:aws:iam::123456789012:role/CivicFixECSExecutionRole",
+  "taskRoleArn": "arn:aws:iam::123456789012:role/CivicFixECSTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "civicfix-api",
+      "image": "123456789012.dkr.ecr.us-east-1.amazonaws.com/civicfix-backend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "hostPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "ENVIRONMENT", "value": "production" },
+        { "name": "NEXT_PUBLIC_ASYNC_REPORTS", "value": "true" },
+        { "name": "LIMITS_REDIS_URL", "value": "redis://elasticache-limits.internal:6379/0" },
+        { "name": "QUEUE_REDIS_URL", "value": "redis://elasticache-queue.internal:6379/0" },
+        { "name": "CACHE_REDIS_URL", "value": "redis://elasticache-limits.internal:6379/0" }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:123456789012:secret:civicfix/db-primary-url"
+        },
+        {
+          "name": "DATABASE_REPLICA_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:123456789012:secret:civicfix/db-replica-url"
+        },
+        {
+          "name": "SUPABASE_SECRET_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:123456789012:secret:civicfix/supabase-key"
+        },
+        {
+          "name": "GEMINI_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:123456789012:secret:civicfix/gemini-key"
+        }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"],
+        "interval": 15,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 10
+      },
+      "stopTimeout": 30,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/civicfix-api",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "api"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "family": "civicfix-worker",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "1024",
+  "memory": "2048",
+  "executionRoleArn": "arn:aws:iam::123456789012:role/CivicFixECSExecutionRole",
+  "taskRoleArn": "arn:aws:iam::123456789012:role/CivicFixECSTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "civicfix-worker",
+      "image": "123456789012.dkr.ecr.us-east-1.amazonaws.com/civicfix-worker:latest",
+      "essential": true,
+      "environment": [
+        { "name": "ENVIRONMENT", "value": "production" },
+        { "name": "WORKER_CONCURRENCY", "value": "10" },
+        { "name": "GEMINI_MAX_CONCURRENCY", "value": "4" },
+        { "name": "LIMITS_REDIS_URL", "value": "redis://elasticache-limits.internal:6379/0" },
+        { "name": "QUEUE_REDIS_URL", "value": "redis://elasticache-queue.internal:6379/0" }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:123456789012:secret:civicfix/db-primary-url"
+        },
+        {
+          "name": "GEMINI_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:123456789012:secret:civicfix/gemini-key"
+        }
+      ],
+      "stopTimeout": 30,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/civicfix-worker",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "worker"
+        }
+      }
+    }
+  ]
+}

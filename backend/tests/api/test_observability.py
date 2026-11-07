@@ -131,3 +131,4 @@ async def test_prometheus_metrics_endpoint_exposition(obs_test_app):
         assert "civicfix_rate_limit_exceeded_total" in body
         assert "civicfix_queue_depth" in body
         assert "civicfix_gemini_latency_seconds" in body
+

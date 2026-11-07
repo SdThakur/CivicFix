@@ -103,3 +103,4 @@ CIRCUIT_BREAKER_STATE = Gauge(
 def get_prometheus_metrics() -> bytes:
     """Serialize all registered Prometheus metrics to Prometheus text exposition format."""
     return generate_latest(registry)
+
