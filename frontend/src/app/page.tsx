@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import dynamic from 'next/dynamic';
 import { 
   Camera, 
   MapPin, 
@@ -18,18 +17,7 @@ import type { Issue } from '@/types';
 import StatusBadge from '@/components/ui/StatusBadge';
 import CursorAmbient from '@/components/glass/CursorAmbient';
 
-// Dynamically import GoogleMapView for the live mini-map to avoid SSR conflicts
-const GoogleMapView = dynamic(() => import('@/components/map/GoogleMapView'), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-full min-h-[360px] flex items-center justify-center bg-surface-canvas rounded-2xl">
-      <div className="flex flex-col items-center gap-2.5 text-content-secondary">
-        <Loader2 className="w-6 h-6 animate-spin text-md-red" />
-        <span className="text-xs font-bold text-content-primary">Connecting Live Mini-Map...</span>
-      </div>
-    </div>
-  ),
-});
+import GoogleMapView from '@/components/map/GoogleMapView';
 
 export default function LandingPage() {
   const [stats, setStats] = useState<any>(null);
