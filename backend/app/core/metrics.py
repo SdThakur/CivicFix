@@ -17,6 +17,9 @@ from prometheus_client import (
     generate_latest,
 )
 
+# Prometheus Content-Type header
+CONTENT_TYPE_LATEST = "text/plain; version=0.0.4; charset=utf-8"
+
 # Shared or custom registry
 registry = REGISTRY
 

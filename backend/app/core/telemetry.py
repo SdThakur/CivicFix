@@ -8,19 +8,30 @@ Provides:
 
 import logging
 import os
-from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.sdk.resources import Resource
+
+try:
+    from opentelemetry import trace
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor
+    from opentelemetry.sdk.resources import Resource
+
+    HAS_OTEL = True
+except ImportError:
+    trace = None
+    HAS_OTEL = False
 
 logger = logging.getLogger("civicfix.telemetry")
 
 _tracer_initialized = False
 
 
-def setup_telemetry(service_name: str = "civicfix-backend") -> trace.Tracer:
+def setup_telemetry(service_name: str = "civicfix-backend"):
     """Initialize OpenTelemetry tracer provider with resource attributes."""
     global _tracer_initialized
+    if not HAS_OTEL:
+        logger.info("OpenTelemetry not installed; tracing disabled.")
+        return None
+
     if not _tracer_initialized:
         resource = Resource.create(
             {
