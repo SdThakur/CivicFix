@@ -274,3 +274,4 @@ class WorkerSettings:
 if __name__ == "__main__":
     from arq import run_worker
     run_worker(WorkerSettings)
+

@@ -56,9 +56,15 @@ class Settings(BaseSettings):
     REPORTS_RATE_LIMIT_PER_MINUTE: int = int(os.getenv("REPORTS_RATE_LIMIT_PER_MINUTE", "10"))
     PROOFS_SIGNED_URL_EXPIRY_SECONDS: int = int(os.getenv("PROOFS_SIGNED_URL_EXPIRY_SECONDS", "900"))
 
-    # Redis Scaling & Rate Limiting Settings
+    # Database Read Replica Setting
+    DATABASE_REPLICA_URL: Optional[str] = os.getenv("DATABASE_REPLICA_URL", None)
+
+    # Redis Scaling, Caching & Rate Limiting Settings
     LIMITS_REDIS_URL: str = os.getenv("LIMITS_REDIS_URL", os.getenv("REDIS_URL", "redis://localhost:6379/1"))
     QUEUE_REDIS_URL: str = os.getenv("QUEUE_REDIS_URL", os.getenv("REDIS_URL", "redis://localhost:6379/0"))
+    CACHE_REDIS_URL: str = os.getenv("CACHE_REDIS_URL", os.getenv("LIMITS_REDIS_URL", os.getenv("REDIS_URL", "redis://localhost:6379/1")))
+    MAP_CACHE_TTL_SECONDS: int = int(os.getenv("MAP_CACHE_TTL_SECONDS", "30"))
+    STATS_CACHE_TTL_SECONDS: int = int(os.getenv("STATS_CACHE_TTL_SECONDS", "60"))
     GEMINI_DAILY_BUDGET: int = int(os.getenv("GEMINI_DAILY_BUDGET", "500"))
     REPORTS_RATE_LIMIT_SIGNED_IN: int = int(os.getenv("REPORTS_RATE_LIMIT_SIGNED_IN", "10"))
     REPORTS_RATE_LIMIT_ANONYMOUS: int = int(os.getenv("REPORTS_RATE_LIMIT_ANONYMOUS", "3"))

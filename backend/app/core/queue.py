@@ -67,3 +67,4 @@ async def enqueue_report(pool: Optional[ArqRedis], report_id: str) -> bool:
             "Report will remain in PENDING state for sweeper recovery."
         )
         return False
+

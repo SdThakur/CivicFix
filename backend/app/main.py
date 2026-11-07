@@ -33,6 +33,7 @@ from app.api import (
     gis,
     transparency,
     jurisdictions,
+    public,
 )
 
 
@@ -122,8 +123,10 @@ app.include_router(gis.router, prefix=api_prefix)
 app.include_router(risk.router, prefix=api_prefix)
 app.include_router(preventive.router, prefix=api_prefix)
 
-# ─── Public Transparency ──────────────────────────────────────────────────────
+# ─── Public Transparency & Scaled Read Routes ──────────────────────────────
 app.include_router(transparency.router, prefix=api_prefix)
+app.include_router(public.router, prefix=api_prefix)
+app.include_router(public.router)  # Mounted at /public for direct nginx micro-cache routing
 
 
 @app.get("/", tags=["Health"])

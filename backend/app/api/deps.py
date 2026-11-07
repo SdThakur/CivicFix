@@ -4,7 +4,7 @@ from typing import AsyncGenerator, List, Callable, Any
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.db.session import AsyncSessionLocal
+from app.db.session import AsyncSessionLocal, get_db, get_read_db
 from app.core.config import settings
 from app.core.security import decode_access_token
 from app.models.user import User, UserRole
