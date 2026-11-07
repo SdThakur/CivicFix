@@ -33,6 +33,8 @@ import jwt
 from app.core.config import settings
 from app.core.redis_limits import RateLimiter, rate_limit, user_or_ip_identity
 from app.core.queue import enqueue_report
+from app.core.jwks import authenticate_request_jwt
+from app.core.circuit_breaker import gemini_circuit_breaker, call_with_timeout
 
 logger = logging.getLogger(__name__)
 
@@ -96,54 +98,8 @@ async def get_supabase_user_id(
     request: Request,
     authorization: Optional[str] = Header(None, alias="Authorization"),
 ) -> str:
-    """Validate Supabase Bearer token and extract user_id (sub)."""
-    if not authorization or not authorization.startswith("Bearer "):
-        # In development / testing without auth header, check for dev bypass or reject
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing or invalid Bearer authentication token.",
-        )
-
-    token = authorization.split(" ")[1]
-    try:
-        # In testing / mock setups: allow decoding without verification if secret matches, or decode unverified payload
-        try:
-            payload = jwt.decode(
-                token,
-                settings.SUPABASE_SECRET_KEY,
-                algorithms=["HS256"],
-                options={"verify_signature": False, "verify_aud": False},
-            )
-        except Exception:
-            payload = jwt.decode(
-                token,
-                options={"verify_signature": False},
-            )
-
-        user_id = payload.get("sub") or payload.get("user_id")
-        if not user_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token does not contain a valid user identity (sub).",
-            )
-
-        # Detect whether user is anonymous
-        is_anon = bool(
-            payload.get("is_anonymous")
-            or payload.get("app_metadata", {}).get("is_anonymous")
-            or payload.get("app_metadata", {}).get("provider") == "anonymous"
-            or payload.get("role") == "anon"
-        )
-        request.state.user_id = str(user_id)
-        request.state.is_anonymous = is_anon
-
-        return str(user_id)
-    except Exception as e:
-        logger.warning(f"Failed to decode Supabase JWT: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials.",
-        )
+    """Validate Supabase Bearer token locally via JWKS/HMAC and extract user_id (sub)."""
+    return await authenticate_request_jwt(request, authorization)
 
 
 # ─── DATABASE RATE LIMITER CHECK (DEFENSE IN DEPTH) ───────────────────────────
@@ -190,12 +146,32 @@ async def run_ai_and_deduplication_pipeline(report_id: str) -> None:
         logger.error(f"Report {report_id} not found in memory/database.")
         return
 
+    can_call = await gemini_circuit_breaker.can_execute()
+    if not can_call:
+        report["status"] = "PENDING_MANUAL"
+        report["error_message"] = "Gemini AI circuit breaker OPEN. Triaged to dispatcher queue."
+        report["updated_at"] = datetime.now(timezone.utc).isoformat()
+        return
+
     report["status"] = "PROCESSING"
     report["updated_at"] = datetime.now(timezone.utc).isoformat()
 
     try:
-        # 1. AI Vision Triage (Mock or Gemini)
-        ai_category, ai_confidence = await call_gemini_vision(report["image_path"], report["description"])
+        # 1. AI Vision Triage with timeout protection
+        try:
+            ai_category, ai_confidence = await call_with_timeout(
+                call_gemini_vision(report["image_path"], report["description"]),
+                timeout_seconds=15.0,
+            )
+            await gemini_circuit_breaker.record_success()
+        except Exception as gemini_err:
+            tripped = await gemini_circuit_breaker.record_failure()
+            if tripped:
+                report["status"] = "PENDING_MANUAL"
+                report["error_message"] = f"Circuit breaker tripped on Gemini error: {gemini_err}. Triaged to dispatcher queue."
+                report["updated_at"] = datetime.now(timezone.utc).isoformat()
+                return
+            raise gemini_err
 
         report["category"] = ai_category
         report["ai_confidence"] = ai_confidence

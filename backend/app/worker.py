@@ -21,6 +21,7 @@ import uuid
 from arq.connections import ArqRedis, RedisSettings
 from app.core.config import settings
 from app.core.queue import get_redis_settings
+from app.core.circuit_breaker import gemini_circuit_breaker, call_with_timeout
 from reports_api import (
     _in_memory_reports,
     _in_memory_issues,
@@ -135,6 +136,22 @@ async def process_report_job(ctx: Dict[str, Any], report_id: str) -> Dict[str, A
         metrics.record_failure()
         return {"status": "NOT_FOUND", "report_id": report_id}
 
+    # Check Gemini Circuit Breaker before processing
+    can_execute = await gemini_circuit_breaker.can_execute(redis_client)
+    if not can_execute:
+        report["status"] = "PENDING_MANUAL"
+        report["error_message"] = "Gemini AI circuit breaker is OPEN. Triaged to dispatcher queue."
+        report["updated_at"] = datetime.now(timezone.utc).isoformat()
+        metrics.record_failure()
+        duration_ms = (time.time() - job_start) * 1000.0
+        structured_log(
+            "circuit_breaker_open",
+            report_id,
+            status="PENDING_MANUAL",
+            duration_ms=round(duration_ms, 2),
+        )
+        return {"status": "PENDING_MANUAL", "reason": "CIRCUIT_BREAKER_OPEN"}
+
     # Transition to PROCESSING
     report["status"] = "PROCESSING"
     report["updated_at"] = datetime.now(timezone.utc).isoformat()
@@ -146,10 +163,29 @@ async def process_report_job(ctx: Dict[str, Any], report_id: str) -> Dict[str, A
         gemini_wait_ms = wait_ms
 
         try:
-            # 2. Call Gemini Vision AI
-            ai_category, ai_confidence = await call_gemini_vision(
-                report["image_path"], report.get("description")
+            # 2. Call Gemini Vision AI with timeout protection
+            ai_category, ai_confidence = await call_with_timeout(
+                call_gemini_vision(report["image_path"], report.get("description")),
+                timeout_seconds=15.0,
             )
+            await gemini_circuit_breaker.record_success(redis_client)
+        except Exception as gemini_err:
+            tripped = await gemini_circuit_breaker.record_failure(redis_client)
+            if tripped:
+                report["status"] = "PENDING_MANUAL"
+                report["error_message"] = f"Circuit breaker tripped on Gemini error: {gemini_err}. Triaged to dispatcher queue."
+                report["updated_at"] = datetime.now(timezone.utc).isoformat()
+                metrics.record_failure()
+                duration_ms = (time.time() - job_start) * 1000.0
+                structured_log(
+                    "circuit_breaker_tripped",
+                    report_id,
+                    status="PENDING_MANUAL",
+                    error=str(gemini_err),
+                    duration_ms=round(duration_ms, 2),
+                )
+                return {"status": "PENDING_MANUAL", "error": str(gemini_err)}
+            raise gemini_err
         finally:
             await release_global_gemini_slot(redis_client)
 

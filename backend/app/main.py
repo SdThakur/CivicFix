@@ -61,6 +61,7 @@ async def lifespan(app: FastAPI):
         await limiter.close()
         if hasattr(app.state, "arq_pool") and app.state.arq_pool is not None:
             await app.state.arq_pool.close()
+        await engine.dispose()
 
 
 app = FastAPI(

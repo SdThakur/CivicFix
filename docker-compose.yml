@@ -48,6 +48,8 @@ services:
       - postgres
       - redis
       - minio
+    stop_grace_period: 30s
+    stop_signal: SIGTERM
     restart: unless-stopped
 
   worker:
@@ -69,6 +71,8 @@ services:
     depends_on:
       - backend
       - redis
+    stop_grace_period: 30s
+    stop_signal: SIGTERM
     restart: unless-stopped
 
   postgres:

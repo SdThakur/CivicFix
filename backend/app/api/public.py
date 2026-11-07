@@ -244,3 +244,4 @@ async def get_public_neighborhoods_stats(
         request=request,
         fetch_coroutine=fetch_neighborhoods,
     )
+

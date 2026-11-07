@@ -46,3 +46,4 @@ class CivicFixPublicReaderUser(HttpUser):
     def view_category_breakdown(self):
         """Simulate citizen viewing category distributions."""
         self.client.get("/api/v1/public/stats/categories", name="/api/v1/public/stats/categories")
+

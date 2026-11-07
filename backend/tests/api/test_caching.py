@@ -230,3 +230,4 @@ async def test_read_replica_session_routing():
     async for write_session in get_db():
         assert write_session is not None
         break
+
