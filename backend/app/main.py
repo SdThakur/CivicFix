@@ -1,11 +1,13 @@
 """CivicFix FastAPI Main Application entrypoint."""
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.redis_limits import RateLimiter
 from app.core.queue import create_queue_pool
+from app.core.logging_middleware import ObservabilityMiddleware
+from app.core.metrics import get_prometheus_metrics, CONTENT_TYPE_LATEST
 from app.db.session import engine, async_session_maker
 from app.db.base import Base
 import app.models  # Load models for metadata registration
@@ -73,7 +75,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Set CORS middleware
+# Set CORS & Observability middlewares
+app.add_middleware(ObservabilityMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.BACKEND_CORS_ORIGINS or ["*"],
@@ -145,3 +148,9 @@ async def root():
 async def health_check():
     """Health check endpoint."""
     return {"status": "healthy", "version": settings.VERSION}
+
+
+@app.get("/metrics", tags=["Observability"])
+async def metrics_endpoint():
+    """Expose Prometheus telemetry metrics for scraping."""
+    return Response(content=get_prometheus_metrics(), media_type=CONTENT_TYPE_LATEST)

@@ -146,3 +146,4 @@ async def authenticate_request_jwt(request: Request, authorization: Optional[str
     request.state.is_anonymous = is_anon
 
     return str(user_id)
+

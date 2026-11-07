@@ -44,3 +44,4 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public
 SELECT rolname, rolsuper, rolinherit, rolcreaterole, rolcreatedb, rolcanlogin, rolconnlimit
 FROM pg_roles
 WHERE rolname IN ('civicfix_api', 'postgres');
+
