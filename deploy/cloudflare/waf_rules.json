@@ -1,0 +1,30 @@
+{
+  "description": "CivicFix Production Cloudflare WAF & Bot Mitigation Ruleset",
+  "rules": [
+    {
+      "id": "rate_limit_report_submission",
+      "description": "Block aggressive bursts targeting asynchronous report creation",
+      "expression": "(http.request.uri.path eq \"/api/v1/reports\" or http.request.uri.path eq \"/reports\") and http.request.method eq \"POST\"",
+      "action": "block",
+      "ratelimit": {
+        "characteristics": ["ip.src"],
+        "period": 10,
+        "requests_per_period": 30,
+        "mitigation_timeout": 60
+      }
+    },
+    {
+      "id": "block_malicious_bots_and_scrapers",
+      "description": "Block automated scrapers and malicious crawler traffic",
+      "expression": "cf.bot_management.score < 30 and not cf.bot_management.verified_bot",
+      "action": "challenge"
+    },
+    {
+      "id": "block_admin_foreign_access",
+      "description": "Protect staff administrative dashboards from unauthorized foreign CIDR ranges",
+      "expression": "http.request.uri.path starts_with \"/api/v1/work-orders\" and not ip.geoip.country in {\"US\", \"CA\"}",
+      "action": "block"
+    }
+  ]
+}
+

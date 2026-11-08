@@ -17,23 +17,12 @@ import {
   ShieldCheck,
   FileSpreadsheet
 } from 'lucide-react';
-import dynamic from 'next/dynamic';
 import { apiClient } from '@/lib/api';
+import TransparencyCharts from '@/components/analytics/TransparencyCharts';
 import { usePublicStats, usePublicCategoryStats } from '@/lib/supabase/queries';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 
-const TransparencyCharts = dynamic(
-  () => import('@/components/analytics/TransparencyCharts'),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="surface-card-solid p-12 rounded-3xl flex flex-col items-center justify-center gap-3 text-content-muted border border-surface-border">
-        <Loader2 className="w-8 h-8 animate-spin text-md-red" />
-        <span className="text-xs font-bold text-content-primary">Loading Performance Analytics...</span>
-      </div>
-    ),
-  }
-);
+// Transparency performance charts
 
 // 1. Historical Trend Data (Weekly volume: Reported vs Resolved)
 const TREND_DATA = [

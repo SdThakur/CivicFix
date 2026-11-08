@@ -1,0 +1,173 @@
+name: CivicFix Production CI Pipeline
+
+on:
+  push:
+    branches: [main, feat/*]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ─── 1. CODE QUALITY & LINTING ──────────────────────────────────────────────
+  lint:
+    name: Lint & Code Style
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Linting Tools
+        run: |
+          pip install flake8 black
+
+      - name: Run Black Formatter Check
+        run: |
+          black --check backend/app/core backend/app/worker.py backend/app/api/public.py backend/reports_api.py
+
+      - name: Run Flake8 Linter
+        run: |
+          flake8 backend/app/core backend/app/worker.py backend/app/api/public.py backend/reports_api.py --max-line-length=120 --ignore=E203,W503
+
+  # ─── 2. AUTOMATED TEST SUITE & COVERAGE ─────────────────────────────────────
+  test:
+    name: Automated Unit & Integration Tests
+    runs-on: ubuntu-latest
+    services:
+      redis-limits:
+        image: redis:7-alpine
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+      redis-queue:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: civicfix_secret
+          POSTGRES_DB: civicfix_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Dependencies
+        run: |
+          pip install -r backend/requirements.txt pytest-cov
+
+      - name: Run Test Suite
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:civicfix_secret@localhost:5432/civicfix_db
+          LIMITS_REDIS_URL: redis://localhost:6380/0
+          QUEUE_REDIS_URL: redis://localhost:6379/0
+          SUPABASE_SECRET_KEY: test_supabase_secret_key_ci_environment_only
+          PYTHONPATH: backend
+        run: |
+          cd backend
+          python -m pytest tests/api/ -v --cov=app/core
+
+  # ─── 3. ALEMBIC MIGRATION CHAIN CHECK ───────────────────────────────────────
+  migration-check:
+    name: Database Migration Integrity
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: civicfix_secret
+          POSTGRES_DB: civicfix_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Dependencies
+        run: |
+          pip install -r backend/requirements.txt
+
+      - name: Validate Alembic Migrations
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:civicfix_secret@localhost:5432/civicfix_db
+          PYTHONPATH: backend
+        run: |
+          cd backend
+          python -m alembic upgrade head
+
+  # ─── 4. DOCKER IMAGE BUILD ──────────────────────────────────────────────────
+  image-build:
+    name: Build Container Images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Backend API Image
+        run: |
+          docker build -t civicfix-backend:test -f backend/Dockerfile backend
+
+      - name: Build Worker Image
+        run: |
+          docker build -t civicfix-worker:test -f backend/Dockerfile.worker backend
+
+  # ─── 5. SECURITY & VULNERABILITY SCAN (TRIVY) ───────────────────────────────
+  security-scan:
+    name: Trivy Security Scan
+    needs: [image-build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Local Image for Scanning
+        run: |
+          docker build -t civicfix-backend:scan -f backend/Dockerfile backend
+
+      - name: Run Trivy Vulnerability Scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: civicfix-backend:scan
+          format: "table"
+          exit-code: "0"  # Informational alerts in CI
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"

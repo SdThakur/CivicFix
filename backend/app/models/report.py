@@ -46,6 +46,7 @@ class ReportStatus(str, enum.Enum):
     IN_PROGRESS = "IN_PROGRESS"
     RESOLVED = "RESOLVED"
     DUPLICATE = "DUPLICATE"
+    PENDING_MANUAL = "PENDING_MANUAL"
 
 
 class PriorityLevel(str, enum.Enum):

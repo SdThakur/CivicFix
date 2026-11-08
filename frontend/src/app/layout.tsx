@@ -13,6 +13,15 @@ import { SupabaseAuthProvider } from '@/lib/supabase/auth';
 export const metadata: Metadata = {
   title: 'CivicFix — AI-Powered City Infrastructure Reporting & Operations',
   description: 'Smart municipal infrastructure reporting, computer vision issue classification, duplicate detection, and dispatch management.',
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/logo.png', sizes: '1024x1024', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
 };
 
 export default function RootLayout({

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ShieldAlert, Mail, Lock, LogIn, ArrowRight } from 'lucide-react';
 import { authApi } from '@/lib/api';
@@ -55,8 +56,15 @@ export default function LoginPage() {
   return (
     <div className="max-w-md mx-auto py-12 space-y-6">
       <div className="text-center space-y-2">
-        <div className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 mx-auto">
-          <ShieldAlert className="w-7 h-7" />
+        <div className="w-14 h-14 rounded-2xl overflow-hidden bg-white/95 border border-slate-700/60 p-1.5 flex items-center justify-center mx-auto shadow-md">
+          <Image
+            src="/logo.png"
+            alt="CivicFix Logo"
+            width={48}
+            height={48}
+            className="w-full h-full object-contain"
+            priority
+          />
         </div>
         <h1 className="text-2xl font-bold text-white tracking-tight">Sign in to CivicFix</h1>
         <p className="text-slate-400 text-sm">Access your citizen dashboard or municipal portal</p>

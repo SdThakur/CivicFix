@@ -61,7 +61,9 @@ class MinIOStorageProvider(AbstractStorageProvider):
         try:
             if not self.client.bucket_exists(self.bucket_name):
                 self.client.make_bucket(self.bucket_name)
-                logger.info("MinIO bucket created successfully", bucket=self.bucket_name)
+                logger.info(
+                    "MinIO bucket created successfully", bucket=self.bucket_name
+                )
         except S3Error as err:
             logger.error("Failed to ensure MinIO bucket existence", error=str(err))
             raise
@@ -95,10 +97,16 @@ class MinIOStorageProvider(AbstractStorageProvider):
 
         try:
             file_url = await asyncio.to_thread(_upload)
-            logger.info("File uploaded to MinIO", filename=destination_filename, url=file_url)
+            logger.info(
+                "File uploaded to MinIO", filename=destination_filename, url=file_url
+            )
             return file_url
         except Exception as e:
-            logger.error("Failed to upload file to MinIO", filename=destination_filename, error=str(e))
+            logger.error(
+                "Failed to upload file to MinIO",
+                filename=destination_filename,
+                error=str(e),
+            )
             raise
 
     async def get_file_url(self, filename: str) -> str:
@@ -118,7 +126,9 @@ class MinIOStorageProvider(AbstractStorageProvider):
             logger.info("File deleted from MinIO", filename=filename)
             return result
         except Exception as e:
-            logger.error("Failed to delete file from MinIO", filename=filename, error=str(e))
+            logger.error(
+                "Failed to delete file from MinIO", filename=filename, error=str(e)
+            )
             return False
 
 

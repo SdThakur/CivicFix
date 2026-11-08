@@ -1,0 +1,75 @@
+# ==============================================================================
+# CivicFix Production Grafana & Prometheus Alert Rules
+# ==============================================================================
+# Evaluates critical operational thresholds for HTTP errors, queue backlog,
+# Gemini AI budget consumption, and circuit breaker trip state.
+# ==============================================================================
+
+groups:
+  - name: civicfix_operational_alerts
+    rules:
+      # ─── 1. HTTP 5xx Error Rate > 1% ─────────────────────────────────────────
+      - alert: High5xxErrorRate
+        expr: |
+          (
+            sum(rate(civicfix_http_requests_total{status_code=~"5.."}[5m]))
+            /
+            sum(rate(civicfix_http_requests_total[5m]))
+          ) * 100 > 1.0
+        for: 2m
+        labels:
+          severity: critical
+          service: civicfix-api
+        annotations:
+          summary: "High HTTP 5xx error rate (> 1%)"
+          description: "CivicFix HTTP 5xx error rate is {{ $value | printf \"%.2f\" }}% over the last 5 minutes."
+          runbook_url: "https://github.com/SdThakur/CivicFix/wiki/runbook#high-5xx-errors"
+
+      # ─── 2. Queue Backlog / Lag > 60 seconds ──────────────────────────────────
+      - alert: QueueLagHigh
+        expr: civicfix_queue_depth > 50
+        for: 1m
+        labels:
+          severity: warning
+          service: civicfix-worker
+        annotations:
+          summary: "ARQ Worker queue backlog accumulating"
+          description: "CivicFix queue depth has exceeded 50 pending reports (current: {{ $value }}) for > 60 seconds."
+          runbook_url: "https://github.com/SdThakur/CivicFix/wiki/runbook#queue-lag"
+
+      # ─── 3. Gemini Budget Cap: 80% Warning ────────────────────────────────────
+      - alert: GeminiDailyBudgetWarning80Pct
+        expr: civicfix_gemini_budget_usage_ratio >= 0.80 and civicfix_gemini_budget_usage_ratio < 1.0
+        for: 1m
+        labels:
+          severity: warning
+          service: civicfix-ai
+        annotations:
+          summary: "Gemini AI daily triage budget at 80%"
+          description: "Daily Gemini AI API calls have reached 80% of configured cap. Prepare for fallback triage."
+          runbook_url: "https://github.com/SdThakur/CivicFix/wiki/runbook#gemini-budget"
+
+      # ─── 4. Gemini Budget Cap: 100% Exhausted ─────────────────────────────────
+      - alert: GeminiDailyBudgetExhausted
+        expr: civicfix_gemini_budget_usage_ratio >= 1.0
+        for: 30s
+        labels:
+          severity: critical
+          service: civicfix-ai
+        annotations:
+          summary: "Gemini AI daily triage budget 100% exhausted"
+          description: "Daily AI cap reached. Outbound Gemini calls paused; reports automatically queued as PENDING."
+          runbook_url: "https://github.com/SdThakur/CivicFix/wiki/runbook#gemini-budget"
+
+      # ─── 5. Circuit Breaker OPEN ──────────────────────────────────────────────
+      - alert: GeminiCircuitBreakerOpen
+        expr: civicfix_circuit_breaker_state{service="gemini"} == 2
+        for: 10s
+        labels:
+          severity: critical
+          service: civicfix-resilience
+        annotations:
+          summary: "Gemini AI circuit breaker tripped to OPEN"
+          description: "Outbound Gemini Vision AI calls are failing. Circuit breaker tripped; reports routing to PENDING_MANUAL dispatcher queue."
+          runbook_url: "https://github.com/SdThakur/CivicFix/wiki/runbook#circuit-breaker"
+

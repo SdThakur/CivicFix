@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
-import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { 
   MapPin, 
@@ -25,18 +24,7 @@ import type { Issue } from '@/types';
 import StatusBadge from '@/components/ui/StatusBadge';
 import EmptyState from '@/components/ui/EmptyState';
 
-// Dynamically import GoogleMapView to ensure clean browser-only initialization
-const GoogleMapView = dynamic(() => import('@/components/map/GoogleMapView'), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-full min-h-[500px] flex items-center justify-center surface-card-solid rounded-3xl">
-      <div className="flex flex-col items-center gap-3 text-content-secondary">
-        <Loader2 className="w-8 h-8 animate-spin text-md-red" />
-        <span className="text-sm font-bold text-content-primary">Initializing Google Maps Engine...</span>
-      </div>
-    </div>
-  ),
-});
+import GoogleMapView from '@/components/map/GoogleMapView';
 
 const CATEGORY_FILTERS = ['ALL', 'Pothole', 'Streetlight', 'Trash', 'Sidewalk', 'Graffiti', 'Road Damage'];
 const STATUS_FILTERS = ['ALL', 'SUBMITTED', 'IN_PROGRESS', 'VERIFICATION', 'RESOLVED'];

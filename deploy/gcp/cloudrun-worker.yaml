@@ -1,0 +1,46 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: civicfix-worker
+  annotations:
+    run.googleapis.com/ingress: internal
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "2"
+        autoscaling.knative.dev/maxScale: "10"
+        run.googleapis.com/cpu-throttling: "false"
+        run.googleapis.com/vpc-access-connector: projects/civicfix-prod/locations/us-central1/connectors/civicfix-vpc
+        run.googleapis.com/vpc-access-egress: all-traffic
+    spec:
+      containerConcurrency: 10
+      timeoutSeconds: 300
+      containers:
+        - image: gcr.io/civicfix-prod/civicfix-worker:latest
+          resources:
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          env:
+            - name: ENVIRONMENT
+              value: "production"
+            - name: WORKER_CONCURRENCY
+              value: "10"
+            - name: GEMINI_MAX_CONCURRENCY
+              value: "4"
+            - name: LIMITS_REDIS_URL
+              value: "redis://10.0.0.4:6379/0"
+            - name: QUEUE_REDIS_URL
+              value: "redis://10.0.0.5:6379/0"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: civicfix-db-primary
+                  key: latest
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: civicfix-gemini-key
+                  key: latest
+

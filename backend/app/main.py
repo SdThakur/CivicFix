@@ -1,9 +1,13 @@
 """CivicFix FastAPI Main Application entrypoint."""
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
+from app.core.redis_limits import RateLimiter
+from app.core.queue import create_queue_pool
+from app.core.logging_middleware import ObservabilityMiddleware
+from app.core.metrics import get_prometheus_metrics, CONTENT_TYPE_LATEST
 from app.db.session import engine, async_session_maker
 from app.db.base import Base
 import app.models  # Load models for metadata registration
@@ -31,12 +35,20 @@ from app.api import (
     gis,
     transparency,
     jurisdictions,
+    public,
 )
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Ensure database tables exist on application startup."""
+    """Initialize Redis rate limiter, ARQ queue pool, and ensure database tables exist."""
+    limiter = RateLimiter(settings.LIMITS_REDIS_URL)
+    await limiter.connect()
+    app.state.limiter = limiter
+
+    arq_pool = await create_queue_pool(settings.QUEUE_REDIS_URL)
+    app.state.arq_pool = arq_pool
+
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
@@ -44,7 +56,14 @@ async def lifespan(app: FastAPI):
             await SLAService.seed_default_rules(session)
     except Exception as e:
         print(f"[CivicFix Startup Warning] Could not auto-create tables: {e}")
-    yield
+
+    try:
+        yield
+    finally:
+        await limiter.close()
+        if hasattr(app.state, "arq_pool") and app.state.arq_pool is not None:
+            await app.state.arq_pool.close()
+        await engine.dispose()
 
 
 app = FastAPI(
@@ -56,7 +75,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Set CORS middleware
+# Set CORS & Observability middlewares
+app.add_middleware(ObservabilityMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.BACKEND_CORS_ORIGINS or ["*"],
@@ -107,8 +127,10 @@ app.include_router(gis.router, prefix=api_prefix)
 app.include_router(risk.router, prefix=api_prefix)
 app.include_router(preventive.router, prefix=api_prefix)
 
-# ─── Public Transparency ──────────────────────────────────────────────────────
+# ─── Public Transparency & Scaled Read Routes ──────────────────────────────
 app.include_router(transparency.router, prefix=api_prefix)
+app.include_router(public.router, prefix=api_prefix)
+app.include_router(public.router)  # Mounted at /public for direct nginx micro-cache routing
 
 
 @app.get("/", tags=["Health"])
@@ -126,3 +148,9 @@ async def root():
 async def health_check():
     """Health check endpoint."""
     return {"status": "healthy", "version": settings.VERSION}
+
+
+@app.get("/metrics", tags=["Observability"])
+async def metrics_endpoint():
+    """Expose Prometheus telemetry metrics for scraping."""
+    return Response(content=get_prometheus_metrics(), media_type=CONTENT_TYPE_LATEST)

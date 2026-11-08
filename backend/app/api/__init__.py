@@ -23,6 +23,7 @@ from app.api import (
     gis,
     transparency,
     jurisdictions,
+    public,
 )
 
 __all__ = [
@@ -48,4 +49,5 @@ __all__ = [
     "gis",
     "transparency",
     "jurisdictions",
+    "public",
 ]

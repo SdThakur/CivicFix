@@ -9,8 +9,6 @@ const nextConfig = {
       'date-fns',
       'clsx',
       'tailwind-merge',
-      '@supabase/supabase-js',
-      '@supabase/ssr',
     ],
   },
 

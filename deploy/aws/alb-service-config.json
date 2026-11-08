@@ -1,0 +1,29 @@
+{
+  "TargetGroup": {
+    "Name": "civicfix-api-tg",
+    "Protocol": "HTTP",
+    "Port": 8000,
+    "TargetType": "ip",
+    "HealthCheckProtocol": "HTTP",
+    "HealthCheckPort": "8000",
+    "HealthCheckPath": "/health",
+    "HealthCheckIntervalSeconds": 15,
+    "HealthCheckTimeoutSeconds": 5,
+    "HealthyThresholdCount": 2,
+    "UnhealthyThresholdCount": 3,
+    "Matcher": {
+      "HttpCode": "200"
+    },
+    "TargetGroupAttributes": [
+      {
+        "Key": "deregistration_delay.timeout_seconds",
+        "Value": "30"
+      },
+      {
+        "Key": "load_balancing.algorithm.type",
+        "Value": "round_robin"
+      }
+    ]
+  }
+}
+

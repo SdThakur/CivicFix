@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
+import Image from 'next/image';
 import { 
   Camera, 
   MapPin, 
@@ -17,18 +17,7 @@ import type { Issue } from '@/types';
 import StatusBadge from '@/components/ui/StatusBadge';
 import CursorAmbient from '@/components/glass/CursorAmbient';
 
-// Dynamically import GoogleMapView for the live mini-map to avoid SSR conflicts
-const GoogleMapView = dynamic(() => import('@/components/map/GoogleMapView'), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-full min-h-[360px] flex items-center justify-center bg-surface-canvas rounded-2xl">
-      <div className="flex flex-col items-center gap-2.5 text-content-secondary">
-        <Loader2 className="w-6 h-6 animate-spin text-md-red" />
-        <span className="text-xs font-bold text-content-primary">Connecting Live Mini-Map...</span>
-      </div>
-    </div>
-  ),
-});
+import GoogleMapView from '@/components/map/GoogleMapView';
 
 export default function LandingPage() {
   const [stats, setStats] = useState<any>(null);
@@ -169,7 +158,9 @@ export default function LandingPage() {
             
             {/* Operational Standard Pill */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-gold text-xs font-bold tracking-tight shadow-sm text-md-black">
-              <ShieldAlert className="w-3.5 h-3.5 text-md-black" />
+              <div className="w-4 h-4 rounded-full overflow-hidden bg-white/90 p-0.5 flex items-center justify-center shadow-xs">
+                <Image src="/logo.png" alt="" width={14} height={14} className="w-full h-full object-contain" />
+              </div>
               <span>Maryland Civic Operations Standard</span>
             </div>
 

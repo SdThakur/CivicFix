@@ -27,7 +27,8 @@ def configure_logging() -> None:
         renderer = structlog.processors.JSONRenderer()
 
     structlog.configure(
-        processors=shared_processors + [
+        processors=shared_processors
+        + [
             structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
         ],
         logger_factory=structlog.stdlib.LoggerFactory(),
@@ -51,7 +52,12 @@ def configure_logging() -> None:
     root_logger.setLevel(log_level)
 
     # Silence overly verbose third-party loggers
-    for logger_name in ["uvicorn", "uvicorn.error", "uvicorn.access", "sqlalchemy.engine"]:
+    for logger_name in [
+        "uvicorn",
+        "uvicorn.error",
+        "uvicorn.access",
+        "sqlalchemy.engine",
+    ]:
         third_party_logger = logging.getLogger(logger_name)
         third_party_logger.handlers = [handler]
         third_party_logger.propagate = False

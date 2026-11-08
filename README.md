@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="frontend/public/logo.png" alt="CivicFix Logo" width="128" height="128" /><br />
+
 # 🏛️ CivicFix
 
 ### Next-Generation AI & Spatial Operations Platform for Civic Infrastructure

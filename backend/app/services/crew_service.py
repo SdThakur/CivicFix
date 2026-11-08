@@ -3,6 +3,7 @@
 from typing import Optional, List, Dict, Any
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.crew import Crew, CrewMember, EmployeeSkill, CrewStatus
 
 class CrewService:

@@ -1,10 +1,10 @@
 """FastAPI dependencies for Database Sessions, Authentication, and Role-Based Access Control."""
 
 from typing import AsyncGenerator, List, Callable, Any
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.db.session import AsyncSessionLocal
+from app.db.session import AsyncSessionLocal, get_db, get_read_db
 from app.core.config import settings
 from app.core.security import decode_access_token
 from app.models.user import User, UserRole
@@ -27,7 +27,9 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def get_current_user(
-    db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    token: str = Depends(oauth2_scheme),
 ) -> User:
     """Validate access token and return current authenticated user."""
     credentials_exception = HTTPException(
@@ -52,6 +54,9 @@ async def get_current_user(
     user = await user_repo.get_by_id(db, user_id=user_id)
     if user is None:
         raise credentials_exception
+
+    request.state.user_id = str(user.id)
+    request.state.is_anonymous = getattr(user, "is_anonymous", False)
 
     return user
 
