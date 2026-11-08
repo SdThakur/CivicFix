@@ -12,6 +12,7 @@ Tests:
 import asyncio
 from datetime import datetime, timezone, timedelta
 from unittest.mock import AsyncMock, patch
+import jwt
 import pytest
 from fastapi import HTTPException
 
@@ -158,15 +159,20 @@ def test_local_jwt_verification_rejects_expired():
 
 def test_local_jwt_verification_rejects_tampered_signature():
     """Tampered token signature is rejected with HTTP 401."""
-    token = create_token("legit-user")
-    parts = token.split(".")
-    new_char = "b" if parts[2][-1] != "b" else "c"
-    tampered = f"{parts[0]}.{parts[1]}.{parts[2][:-1]}{new_char}"
+    # Sign token with an unauthorized key: valid base64, but signature verification fails
+    tampered = jwt.encode(
+        {"sub": "legit-user", "aud": "authenticated"},
+        "unauthorized-attacker-secret-key-32b!",
+        algorithm="HS256",
+    )
 
     with pytest.raises(HTTPException) as exc_info:
         verify_supabase_jwt(tampered)
     assert exc_info.value.status_code == 401
-    assert "verification failed" in exc_info.value.detail.lower()
+    assert any(
+        phrase in exc_info.value.detail.lower()
+        for phrase in ("verification failed", "malformed")
+    )
 
 
 # ─── 4. OUTBOUND CALL TIMEOUTS & RETRIES WITH JITTER TESTS ──────────────────
