@@ -133,6 +133,135 @@
   z-index: 2;
 }
 
+/* ==========================================================================
+   Lucid Civic Glass Optics & Elevations
+   ========================================================================== */
+
+/* Elevation 1: Lucid Glass Panel (Cards, Feed Panes, Squircles) */
+.lucid-glass-panel {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-radius: 2rem; /* 32px squircle */
+  box-shadow: 
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.95),
+    0 0 0 1px rgba(11, 11, 12, 0.06),
+    0 12px 32px -8px rgba(11, 11, 12, 0.05);
+  position: relative;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              background 0.25s ease;
+}
+
+.lucid-glass-panel:hover {
+  transform: translateY(-4px);
+  box-shadow: 
+    inset 0 1px 0 0 rgba(255, 255, 255, 1),
+    0 0 0 1px rgba(11, 11, 12, 0.09),
+    0 20px 40px -12px rgba(11, 11, 12, 0.08);
+}
+
+/* Elevation 2: Lucid Glass Plate (Floating Sheets, Modals, Docks) */
+.lucid-glass-plate {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  box-shadow: 
+    inset 0 1.5px 0 0 rgba(255, 255, 255, 1),
+    inset 0 -1px 0 0 rgba(11, 11, 12, 0.03),
+    0 0 0 1px rgba(11, 11, 12, 0.08),
+    0 24px 48px -12px rgba(11, 11, 12, 0.12);
+  position: relative;
+}
+
+/* Floating Glass Input Trough */
+.lucid-input {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 
+    inset 0 2px 4px rgba(11, 11, 12, 0.04),
+    0 0 0 1px rgba(11, 11, 12, 0.08);
+  border-radius: 1rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lucid-input:focus {
+  outline: none !important;
+  background: rgba(255, 255, 255, 0.90);
+  box-shadow: 
+    inset 0 1px 2px rgba(11, 11, 12, 0.02),
+    0 0 0 2px #ffc72c,
+    0 0 16px rgba(255, 199, 44, 0.25) !important;
+}
+
+/* Lucid Status Chips */
+.lucid-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.lucid-chip-critical {
+  background: rgba(182, 24, 37, 0.08);
+  color: #b61825;
+  border: 1px solid rgba(182, 24, 37, 0.22);
+}
+
+.lucid-chip-critical .beacon-dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 9999px;
+  background-color: #b61825;
+  box-shadow: 0 0 8px rgba(182, 24, 37, 0.6);
+  animation: pulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.lucid-chip-review {
+  background: rgba(255, 199, 44, 0.16);
+  color: #6f5400;
+  border: 1px solid rgba(255, 199, 44, 0.35);
+}
+
+.lucid-chip-review .beacon-dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 9999px;
+  background-color: #775a00;
+}
+
+.lucid-chip-resolved {
+  background: rgba(16, 185, 129, 0.10);
+  color: #065f46;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.lucid-chip-resolved .beacon-dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 9999px;
+  background-color: #10b981;
+}
+
+/* Civic Dock Island styling */
+.civic-dock-island {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(48px) saturate(200%);
+  -webkit-backdrop-filter: blur(48px) saturate(200%);
+  border-radius: 9999px;
+  box-shadow: 
+    inset 0 1.5px 0 0 rgba(255, 255, 255, 1),
+    inset 0 -1px 0 0 rgba(11, 11, 12, 0.03),
+    0 0 0 1px rgba(11, 11, 12, 0.08),
+    0 24px 48px -12px rgba(11, 11, 12, 0.16);
+}
+
 /* Primary floating glass control surface */
 .liquid-glass-surface {
   background-color: var(--glass-bg);

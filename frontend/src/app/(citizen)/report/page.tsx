@@ -475,25 +475,33 @@ export default function ReportWizardPage() {
           )}
 
           {/* Camera-First Hero Card */}
-          <div className="p-8 sm:p-10 rounded-3xl liquid-glass border border-white/50 dark:border-white/10 shadow-glass text-center space-y-6">
-            <div className="w-16 h-16 rounded-2xl bg-md-gold/20 flex items-center justify-center mx-auto text-md-black dark:text-md-gold border border-md-gold/30">
-              <Camera className="w-8 h-8" />
+          <div className="p-8 sm:p-12 rounded-[2.5rem] lucid-glass-plate specular-edge border border-black/[0.06] dark:border-white/[0.08] shadow-card text-center space-y-6">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-[#b61825] to-[#e03a3e] text-white flex items-center justify-center mx-auto shadow-[0_8px_24px_rgba(182,24,37,0.35)] relative">
+              <Camera className="w-9 h-9" />
+              <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ffc72c] opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-[#ffc72c]"></span>
+              </span>
             </div>
 
             <div className="space-y-2">
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-content-primary">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#ffc72c]/20 text-[#6f5400] text-xs font-bold uppercase tracking-wider">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Instant VisionOS Capture</span>
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-black tracking-[-0.03em] text-content-primary font-display">
                 Report Infrastructure
               </h1>
-              <p className="text-sm text-content-secondary max-w-md mx-auto">
+              <p className="text-sm text-content-secondary max-w-md mx-auto leading-relaxed">
                 Snap or upload a photo of road hazards, broken signals, or street defects. EXIF GPS and computer vision handle the rest.
               </p>
             </div>
 
             {/* Action Buttons */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md mx-auto pt-2">
-              <label className="flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-md-red text-white font-bold text-sm shadow-md hover:bg-md-red-dark transition cursor-pointer">
-                <Camera className="w-5 h-5" />
-                <span>Snap Photo</span>
+              <label className="flex items-center justify-center gap-3 px-6 py-4 rounded-2xl btn-md-red text-white font-bold text-sm shadow-md hover:scale-[1.02] active:scale-[0.98] transition cursor-pointer">
+                <Camera className="w-5 h-5 text-white" />
+                <span>Snap Live Photo</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -506,9 +514,9 @@ export default function ReportWizardPage() {
                 />
               </label>
 
-              <label className="flex items-center justify-center gap-3 px-6 py-4 rounded-2xl liquid-glass-frosted border border-content-secondary/20 font-bold text-sm text-content-primary hover:bg-white/40 dark:hover:bg-white/10 transition cursor-pointer">
-                <Upload className="w-5 h-5 text-content-secondary" />
-                <span>Upload File</span>
+              <label className="flex items-center justify-center gap-3 px-6 py-4 rounded-2xl lucid-glass-panel border border-black/[0.08] font-bold text-sm text-content-primary hover:bg-white active:scale-[0.98] transition cursor-pointer">
+                <Upload className="w-5 h-5 text-[#b61825]" />
+                <span>Upload From Library</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -547,21 +555,21 @@ export default function ReportWizardPage() {
           </div>
 
           {/* Photo Preview & Location Panel */}
-          <div className="p-6 rounded-3xl liquid-glass border border-white/50 dark:border-white/10 shadow-glass space-y-5">
+          <div className="p-6 sm:p-8 rounded-[2rem] lucid-glass-panel space-y-5">
             {previewUrl && (
-              <div className="relative rounded-2xl overflow-hidden aspect-video bg-neutral-900 border border-black/10">
+              <div className="relative rounded-2xl overflow-hidden aspect-video bg-neutral-900 border border-black/10 shadow-inner">
                 <img src={previewUrl} alt="Report preview" className="w-full h-full object-cover" />
-                <div className="absolute top-3 left-3 px-3 py-1.5 rounded-full liquid-glass-frosted border border-white/30 text-[11px] font-bold text-white flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-md-gold" /> WebP Preprocessed (~1600px)
+                <div className="absolute top-3 left-3 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-[11px] font-bold text-white flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#ffc72c]" /> WebP Preprocessed (~1600px)
                 </div>
               </div>
             )}
 
             {/* Location & Approximate Privacy Toggle */}
-            <div className="p-4 rounded-2xl bg-surface-overlay/40 border border-content-secondary/15 space-y-3">
+            <div className="p-4 rounded-2xl bg-white/60 dark:bg-black/20 border border-black/[0.06] space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-md-red" />
+                  <MapPin className="w-4 h-4 text-[#b61825]" />
                   <span className="text-xs font-bold text-content-primary">Location Coordinates</span>
                 </div>
                 <button
@@ -569,8 +577,8 @@ export default function ReportWizardPage() {
                   onClick={handleToggleApproximate}
                   className={`px-2.5 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
                     isApproximate
-                      ? 'bg-md-gold/20 text-md-black dark:text-md-gold border border-md-gold/40'
-                      : 'bg-surface-canvas border border-content-secondary/20 text-content-secondary'
+                      ? 'bg-[#ffc72c]/20 text-[#6f5400] border border-[#ffc72c]/40'
+                      : 'bg-white border border-black/[0.08] text-content-secondary'
                   }`}
                 >
                   <EyeOff className="w-3.5 h-3.5" />
@@ -590,15 +598,15 @@ export default function ReportWizardPage() {
 
           {/* 100m Upvote Existing Candidate (Before AI Ingestion) */}
           {nearbyCandidates && nearbyCandidates.length > 0 && (
-            <div className="p-5 rounded-2xl liquid-glass-gold border border-md-gold/40 shadow-sm space-y-3">
-              <div className="flex items-center gap-2 text-md-black">
-                <AlertTriangle className="w-4 h-4 text-md-red" />
+            <div className="p-6 rounded-[2rem] lucid-glass-panel border-[#ffc72c]/50 bg-[#ffc72c]/10 shadow-sm space-y-3">
+              <div className="flex items-center gap-2 text-[#775a00]">
+                <AlertTriangle className="w-4 h-4 text-[#b61825]" />
                 <span className="font-bold text-xs uppercase tracking-wider">Nearby Existing Issue Found</span>
               </div>
-              <p className="text-xs text-md-black/80">
+              <p className="text-xs text-[#1b1c19]/80">
                 A matching infrastructure report was detected within 100 meters. Upvote it to increase priority instead of creating a duplicate ticket!
               </p>
-              <div className="p-3 rounded-xl bg-white/70 dark:bg-black/30 border border-md-gold/30 flex items-center justify-between gap-3">
+              <div className="p-4 rounded-2xl bg-white/80 border border-[#ffc72c]/30 flex items-center justify-between gap-3">
                 <div>
                   <span className="text-xs font-bold block text-content-primary">{nearbyCandidates[0].title}</span>
                   <span className="text-[11px] text-content-secondary">
@@ -609,9 +617,9 @@ export default function ReportWizardPage() {
                   type="button"
                   onClick={() => handleUpvoteExisting(nearbyCandidates[0].id)}
                   disabled={upvoteMutation.isPending}
-                  className="px-4 py-2 rounded-xl bg-md-black text-white text-xs font-bold hover:bg-neutral-800 transition flex items-center gap-1.5 shadow"
+                  className="px-4 py-2 rounded-xl btn-md-gold text-md-black text-xs font-bold transition flex items-center gap-1.5 shadow"
                 >
-                  <ThumbsUp className="w-3.5 h-3.5 text-md-gold" />
+                  <ThumbsUp className="w-3.5 h-3.5 text-md-black" />
                   <span>Upvote Existing</span>
                 </button>
               </div>
@@ -619,19 +627,19 @@ export default function ReportWizardPage() {
           )}
 
           {/* Category & Description Form */}
-          <div className="p-6 rounded-3xl liquid-glass border border-white/50 dark:border-white/10 shadow-glass space-y-4">
+          <div className="p-6 sm:p-8 rounded-[2rem] lucid-glass-panel space-y-5">
             <div>
               <label className="block text-xs font-bold text-content-primary mb-2">Category</label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 {CATEGORIES.map((cat) => (
                   <button
                     key={cat.id}
                     type="button"
                     onClick={() => setCategory(cat.id)}
-                    className={`p-2.5 rounded-xl text-left text-xs font-semibold transition border ${
+                    className={`p-3 rounded-xl text-left text-xs font-semibold transition border ${
                       category === cat.id
-                        ? 'bg-md-gold/20 border-md-gold/60 text-md-black dark:text-md-gold shadow-sm'
-                        : 'liquid-glass-frosted border-content-secondary/15 text-content-secondary hover:text-content-primary'
+                        ? 'bg-[#ffc72c]/20 border-[#ffc72c] text-[#6f5400] font-bold shadow-xs'
+                        : 'bg-white/60 border-black/[0.06] text-content-secondary hover:text-content-primary hover:bg-white'
                     }`}
                   >
                     {cat.label}
@@ -646,13 +654,13 @@ export default function ReportWizardPage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe landmark or specific location details..."
-                className="w-full px-4 py-2.5 rounded-xl bg-surface-canvas/60 border border-content-secondary/20 text-xs text-content-primary focus:outline-none focus:ring-2 focus:ring-md-gold/40 resize-none h-20"
+                className="w-full px-4 py-3 rounded-2xl lucid-input text-xs text-content-primary resize-none h-24"
               />
             </div>
 
             {/* Error Message */}
             {errorMessage && (
-              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-medium flex items-center gap-2">
+              <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-medium flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>{errorMessage}</span>
               </div>
@@ -660,17 +668,17 @@ export default function ReportWizardPage() {
 
             {/* Live Async Pipeline Progress Card */}
             {pipelineStatus && (
-              <div className="p-4 rounded-2xl liquid-glass-frosted border border-white/40 dark:border-white/10 space-y-3">
+              <div className="p-5 rounded-2xl lucid-glass-plate border border-black/[0.08] space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-content-primary flex items-center gap-2">
-                    {pipelineStatus === 'PENDING' && <Loader2 className="w-4 h-4 animate-spin text-md-gold" />}
-                    {pipelineStatus === 'PROCESSING' && <RefreshCw className="w-4 h-4 animate-spin text-md-gold" />}
-                    {pipelineStatus === 'DONE' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
-                    {pipelineStatus === 'FAILED' && <AlertCircle className="w-4 h-4 text-red-500" />}
+                    {pipelineStatus === 'PENDING' && <Loader2 className="w-4 h-4 animate-spin text-[#ffc72c]" />}
+                    {pipelineStatus === 'PROCESSING' && <RefreshCw className="w-4 h-4 animate-spin text-[#ffc72c]" />}
+                    {pipelineStatus === 'DONE' && <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
+                    {pipelineStatus === 'FAILED' && <AlertCircle className="w-4 h-4 text-red-600" />}
                     Pipeline Status: <span className="font-extrabold">{pipelineStatus}</span>
                   </span>
                   {aiConfidence && (
-                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                    <span className="text-xs font-bold text-emerald-600">
                       AI Confidence: {aiConfidence}%
                     </span>
                   )}
@@ -690,7 +698,7 @@ export default function ReportWizardPage() {
                     <button
                       type="button"
                       onClick={() => router.push('/dashboard')}
-                      className="px-3 py-1.5 rounded-xl bg-md-black text-white text-xs font-bold hover:bg-neutral-800 transition shadow"
+                      className="px-3.5 py-1.5 rounded-xl btn-md-gold text-md-black text-xs font-bold transition shadow"
                     >
                       View on Dashboard →
                     </button>
@@ -699,13 +707,13 @@ export default function ReportWizardPage() {
 
                 {pipelineStatus === 'FAILED' && (
                   <div className="flex items-center justify-between pt-1">
-                    <span className="text-xs text-red-500 font-medium">
+                    <span className="text-xs text-red-600 font-medium">
                       Analysis encountered an issue.
                     </span>
                     <button
                       type="button"
                       onClick={handleSubmitReport}
-                      className="px-3 py-1.5 rounded-xl bg-red-600 text-white text-xs font-bold hover:bg-red-700 transition shadow"
+                      className="px-3.5 py-1.5 rounded-xl btn-md-red text-white text-xs font-bold transition shadow"
                     >
                       Retry Submission
                     </button>
@@ -720,7 +728,7 @@ export default function ReportWizardPage() {
                 type="button"
                 onClick={handleSubmitReport}
                 disabled={submitting}
-                className="w-full py-3.5 rounded-2xl bg-md-red text-white font-bold text-sm shadow-md hover:bg-md-red-dark transition flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full py-4 rounded-2xl btn-md-red text-white font-bold text-sm shadow-md hover:scale-[1.01] active:scale-[0.99] transition flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {submitting ? (
                   <>

@@ -246,8 +246,8 @@ function MapPageContent() {
   return (
     <div className="space-y-3 py-4 sm:py-8">
       <div className="flex-1 flex flex-col min-h-0 space-y-2.5 h-full overflow-hidden">
-        {/* Top Header Card — Styled to match Landing Page Hero aesthetics */}
-        <div className="surface-card-solid p-6 sm:p-10 lg:p-12 relative overflow-hidden rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-surface-border shadow-card flex-shrink-0">
+        {/* Top Header Card — Styled with Lucid Civic Glass plate aesthetics */}
+        <div className="lucid-glass-plate specular-edge p-6 sm:p-10 lg:p-12 relative overflow-hidden rounded-[2.5rem] flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-black/[0.06] dark:border-white/[0.08] shadow-card flex-shrink-0">
           {/* Subtle Maryland Accent Top Edge Stripe */}
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-md-red via-md-gold to-md-red" />
 
@@ -262,12 +262,12 @@ function MapPageContent() {
 
           <div className="space-y-2 z-10 text-left">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-gold text-xs font-bold tracking-tight shadow-sm text-md-black">
-              <span className="w-2 h-2 rounded-full bg-md-red animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-[#b61825] animate-pulse" />
               <span>Live Geospatial Operations Standard</span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-content-primary tracking-tight font-display leading-[1.15]">
-              Public Infrastructure <span className="text-md-red">City Map</span>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-content-primary tracking-[-0.03em] font-display leading-[1.15]">
+              Public Infrastructure <span className="text-[#b61825]">City Map</span>
             </h1>
 
             <p className="text-xs sm:text-sm text-content-secondary max-w-xl font-normal leading-relaxed">
@@ -277,7 +277,7 @@ function MapPageContent() {
 
           <div className="flex items-center gap-3 flex-wrap z-10">
             {/* Accessible List / Map View Toggle */}
-            <div className="flex items-center rounded-2xl bg-neutral-black-06 p-1 border border-surface-border" role="group" aria-label="View Mode">
+            <div className="flex items-center rounded-2xl bg-black/[0.05] p-1 border border-black/[0.06]" role="group" aria-label="View Mode">
               <button
                 onClick={() => setViewMode('map')}
                 className={`min-h-[40px] px-4 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
@@ -307,7 +307,7 @@ function MapPageContent() {
             <button
               onClick={fetchIssues}
               disabled={loading}
-              className="min-h-[44px] min-w-[44px] px-4 py-2 rounded-2xl liquid-glass-surface specular-edge text-content-primary hover:bg-neutral-black-06 active:scale-95 transition-all flex items-center gap-2 border border-surface-border text-xs font-bold"
+              className="min-h-[44px] min-w-[44px] px-4 py-2 rounded-2xl lucid-glass-panel specular-edge text-content-primary hover:bg-black/[0.04] active:scale-95 transition-all flex items-center gap-2 border border-black/[0.06] text-xs font-bold"
               title="Refresh map incidents"
               aria-label="Refresh incident feed"
             >
@@ -315,8 +315,8 @@ function MapPageContent() {
               <span className="hidden sm:inline">Refresh</span>
             </button>
             
-            <div className="px-4 py-2 rounded-2xl bg-neutral-black-06 border border-surface-border text-xs font-bold text-content-primary flex items-center gap-1.5">
-              <span className="text-md-red font-black text-sm">{mappableIssues.length}</span> Mapped
+            <div className="px-4 py-2 rounded-2xl bg-black/[0.05] border border-black/[0.06] text-xs font-bold text-content-primary flex items-center gap-1.5">
+              <span className="text-[#b61825] font-black text-sm tabular-nums">{mappableIssues.length}</span> Mapped
             </div>
           </div>
         </div>
@@ -506,13 +506,13 @@ function MapPageContent() {
             </div>
 
             {/* Desktop Persistent Sidebar (1 col) - The solitary scrolling feed container */}
-            <div className="hidden lg:flex surface-card-solid p-5 flex-col h-full rounded-3xl border border-surface-border shadow-card min-h-0">
-              <div className="flex items-center justify-between border-b border-surface-border pb-3 mb-3 flex-shrink-0">
+            <div className="hidden lg:flex lucid-glass-panel p-5 flex-col h-full rounded-[2rem] border border-black/[0.06] min-h-0">
+              <div className="flex items-center justify-between border-b border-black/[0.06] pb-3 mb-3 flex-shrink-0">
                 <span className="text-xs font-black text-content-primary uppercase tracking-wider">
                   {loading ? 'Scanning Cluster...' : `${mappableIssues.length} Incidents Found`}
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-md-red-subtle text-[11px] font-bold text-md-red">
-                  <span className="w-1.5 h-1.5 rounded-full bg-md-red animate-pulse" />
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#b61825]/10 text-[11px] font-bold text-[#b61825]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#b61825] animate-pulse" />
                   Live Feed
                 </span>
               </div>
@@ -521,7 +521,7 @@ function MapPageContent() {
               <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1.5">
                 {loading ? (
                   Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="p-4 rounded-2xl bg-surface-card-subtle border border-surface-border animate-pulse space-y-2">
+                    <div key={i} className="p-4 rounded-2xl bg-white/60 border border-black/[0.04] animate-pulse space-y-2">
                       <div className="h-3.5 bg-neutral-black-12 rounded w-3/4" />
                       <div className="h-3 bg-neutral-black-06 rounded w-1/2" />
                     </div>
@@ -543,12 +543,12 @@ function MapPageContent() {
                         onClick={() => setSelectedIssue(isSelected ? null : issue)}
                         className={`w-full text-left p-4 rounded-2xl border transition-all space-y-2 ${
                           isSelected
-                            ? 'border-md-gold bg-md-gold-subtle shadow-md'
-                            : 'border-surface-border hover:border-surface-border-strong bg-surface-card hover:bg-surface-card-subtle'
+                            ? 'border-[#ffc72c] bg-[#ffc72c]/15 shadow-md'
+                            : 'border-black/[0.06] hover:border-black/[0.12] bg-white/70 hover:bg-white'
                         }`}
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-neutral-black-06 text-content-secondary">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-black/[0.05] text-[#5b403e] tabular-nums">
                             {issue.id}
                           </span>
                           <StatusBadge status={issue.status} size="sm" />
@@ -560,16 +560,16 @@ function MapPageContent() {
 
                         {issue.location && (
                           <div className="text-xs text-content-secondary truncate flex items-center gap-1">
-                            <MapPin className="w-3.5 h-3.5 text-md-red flex-shrink-0" />
+                            <MapPin className="w-3.5 h-3.5 text-[#b61825] flex-shrink-0" />
                             <span className="truncate">{issue.location.address}</span>
                           </div>
                         )}
 
-                        <div className="flex items-center justify-between text-xs pt-2 border-t border-surface-border">
+                        <div className="flex items-center justify-between text-xs pt-2 border-t border-black/[0.06]">
                           <span className="text-content-muted font-semibold">
                             👥 {issue.report_count ?? 1} Citizen Report
                           </span>
-                          <span className="font-bold text-content-primary">
+                          <span className="font-bold text-content-primary tabular-nums">
                             Score: {Math.round(issue.priority_score || 50)}
                           </span>
                         </div>
@@ -587,7 +587,7 @@ function MapPageContent() {
           {/* Replaces the cramped 2/3 + 1/3 mobile split with full-height map overlay   */}
           {/* ========================================================================= */}
           <div 
-            className={`lg:hidden absolute bottom-0 left-0 right-0 z-30 transition-all duration-300 ease-out surface-card-solid border-t border-surface-border rounded-t-3xl shadow-floating flex flex-col ${
+            className={`lg:hidden absolute bottom-0 left-0 right-0 z-30 transition-all duration-300 ease-out lucid-glass-plate border-t border-black/[0.08] rounded-t-[2.5rem] shadow-floating flex flex-col ${
               sheetState === 'peek' 
                 ? 'h-20' 
                 : sheetState === 'half' 

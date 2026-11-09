@@ -213,15 +213,15 @@ function DashboardContent() {
       )}
 
       {/* Greeting Header */}
-      <div className="surface-card-solid p-6 sm:p-8 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-surface-border">
+      <div className="lucid-glass-plate specular-edge p-6 sm:p-8 rounded-[2.5rem] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-black/[0.06] dark:border-white/[0.08] shadow-card">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-md-gold inline-block" />
-            <span className="text-xs font-bold text-content-muted uppercase tracking-wider">
-              Citizen Portal
+            <span className="w-2.5 h-2.5 rounded-full bg-[#ffc72c] inline-block animate-pulse" />
+            <span className="text-xs font-bold text-[#5b403e] uppercase tracking-wider">
+              Citizen Operations Portal
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-content-primary tracking-tight font-display">
+          <h1 className="text-2xl sm:text-3xl font-black text-content-primary tracking-[-0.03em] font-display">
             Activity & Resolution Dashboard
           </h1>
           <p className="text-content-secondary text-sm mt-1">
@@ -234,7 +234,7 @@ function DashboardContent() {
           <button
             onClick={fetchReports}
             disabled={loading}
-            className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl liquid-glass-surface specular-edge text-content-primary hover:bg-neutral-black-06 transition-all flex items-center justify-center border border-surface-border"
+            className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl lucid-glass-panel specular-edge text-content-primary hover:bg-black/[0.04] transition-all flex items-center justify-center border border-black/[0.06]"
             title="Refresh reports"
             aria-label="Refresh reports"
           >
@@ -251,37 +251,37 @@ function DashboardContent() {
         </div>
       </div>
 
-      {/* Summary KPI Metrics: Solid White Cards */}
+      {/* Summary KPI Metrics: Lucid Glass Panels */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="surface-card-solid p-5 rounded-2xl border border-surface-border">
+        <div className="lucid-glass-panel p-5">
           <div className="text-content-muted text-xs font-bold uppercase tracking-wider mb-1 flex items-center gap-2">
             <Layers className="w-4 h-4 text-md-black" /> Total Reports
           </div>
-          <div className="text-3xl font-black text-content-primary font-display">{loading ? '...' : totalReports}</div>
+          <div className="text-3xl font-black text-content-primary font-display tabular-nums">{loading ? '...' : totalReports}</div>
           <div className="text-[11px] text-content-muted mt-1">Submissions in queue</div>
         </div>
 
-        <div className="surface-card-solid p-5 rounded-2xl border border-surface-border">
+        <div className="lucid-glass-panel p-5">
           <div className="text-content-muted text-xs font-bold uppercase tracking-wider mb-1 flex items-center gap-2">
-            <Clock className="w-4 h-4 text-md-gold" /> In Progress
+            <Clock className="w-4 h-4 text-[#775a00]" /> In Progress
           </div>
-          <div className="text-3xl font-black text-content-primary font-display">{loading ? '...' : inProgressReports}</div>
+          <div className="text-3xl font-black text-[#b61825] font-display tabular-nums">{loading ? '...' : inProgressReports}</div>
           <div className="text-[11px] text-content-muted mt-1">Crews active on site</div>
         </div>
 
-        <div className="surface-card-solid p-5 rounded-2xl border border-surface-border">
+        <div className="lucid-glass-panel p-5">
           <div className="text-content-muted text-xs font-bold uppercase tracking-wider mb-1 flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-md-black" /> Resolved
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Resolved
           </div>
-          <div className="text-3xl font-black text-content-primary font-display">{loading ? '...' : resolvedReports}</div>
+          <div className="text-3xl font-black text-emerald-700 font-display tabular-nums">{loading ? '...' : resolvedReports}</div>
           <div className="text-[11px] text-content-muted mt-1">Verified with photos</div>
         </div>
 
-        <div className="surface-card-solid p-5 rounded-2xl border border-surface-border">
+        <div className="lucid-glass-panel p-5">
           <div className="text-content-muted text-xs font-bold uppercase tracking-wider mb-1 flex items-center gap-2">
             <AlertCircle className="w-4 h-4 text-content-secondary" /> Under Review
           </div>
-          <div className="text-3xl font-black text-content-primary font-display">{loading ? '...' : underReviewReports}</div>
+          <div className="text-3xl font-black text-content-primary font-display tabular-nums">{loading ? '...' : underReviewReports}</div>
           <div className="text-[11px] text-content-muted mt-1">AI triage pipeline</div>
         </div>
       </div>
@@ -289,11 +289,11 @@ function DashboardContent() {
       {/* ========================================================================= */}
       {/* NOTIFICATION PREFERENCES SECTION                                          */}
       {/* ========================================================================= */}
-      <div className="surface-card-solid p-6 rounded-3xl border border-surface-border space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-surface-border pb-3">
+      <div className="lucid-glass-panel p-6 rounded-[2rem] space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-black/[0.06] pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-md-gold-subtle flex items-center justify-center text-md-black">
-              <Bell className="w-4 h-4 text-md-black" />
+            <div className="w-9 h-9 rounded-xl bg-[#ffc72c]/20 flex items-center justify-center text-[#775a00]">
+              <Bell className="w-4 h-4 text-[#775a00]" />
             </div>
             <div>
               <h3 className="font-bold text-sm text-content-primary">Dispatch Alert & Notification Preferences</h3>
@@ -310,12 +310,12 @@ function DashboardContent() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-          <label className="flex items-start gap-3 p-3 rounded-2xl bg-surface-card-subtle border border-surface-border cursor-pointer hover:border-surface-border-strong transition-all">
+          <label className="flex items-start gap-3 p-3.5 rounded-2xl bg-white/70 border border-black/[0.06] cursor-pointer hover:border-black/[0.12] transition-all">
             <input
               type="checkbox"
               checked={notifySms}
               onChange={(e) => setNotifySms(e.target.checked)}
-              className="w-4 h-4 rounded text-md-red accent-md-red cursor-pointer mt-0.5"
+              className="w-4 h-4 rounded text-[#b61825] accent-[#b61825] cursor-pointer mt-0.5"
             />
             <div>
               <span className="font-bold text-content-primary block">SMS Dispatch Alerts</span>
@@ -323,12 +323,12 @@ function DashboardContent() {
             </div>
           </label>
 
-          <label className="flex items-start gap-3 p-3 rounded-2xl bg-surface-card-subtle border border-surface-border cursor-pointer hover:border-surface-border-strong transition-all">
+          <label className="flex items-start gap-3 p-3.5 rounded-2xl bg-white/70 border border-black/[0.06] cursor-pointer hover:border-black/[0.12] transition-all">
             <input
               type="checkbox"
               checked={notifyEmail}
               onChange={(e) => setNotifyEmail(e.target.checked)}
-              className="w-4 h-4 rounded text-md-red accent-md-red cursor-pointer mt-0.5"
+              className="w-4 h-4 rounded text-[#b61825] accent-[#b61825] cursor-pointer mt-0.5"
             />
             <div>
               <span className="font-bold text-content-primary block">Email Closeout Proof</span>
@@ -336,12 +336,12 @@ function DashboardContent() {
             </div>
           </label>
 
-          <label className="flex items-start gap-3 p-3 rounded-2xl bg-surface-card-subtle border border-surface-border cursor-pointer hover:border-surface-border-strong transition-all">
+          <label className="flex items-start gap-3 p-3.5 rounded-2xl bg-white/70 border border-black/[0.06] cursor-pointer hover:border-black/[0.12] transition-all">
             <input
               type="checkbox"
               checked={notifyDigest}
               onChange={(e) => setNotifyDigest(e.target.checked)}
-              className="w-4 h-4 rounded text-md-red accent-md-red cursor-pointer mt-0.5"
+              className="w-4 h-4 rounded text-[#b61825] accent-[#b61825] cursor-pointer mt-0.5"
             />
             <div>
               <span className="font-bold text-content-primary block">Weekly Community Digest</span>
@@ -384,7 +384,7 @@ function DashboardContent() {
               return (
                 <div
                   key={report.id}
-                  className="surface-card-solid p-6 rounded-3xl space-y-5 hover:border-surface-border-strong transition-all border border-surface-border"
+                  className="lucid-glass-panel p-6 sm:p-7 rounded-[2rem] space-y-5"
                 >
                   {/* Top Bar: Tracking #, Category, Status Badge */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">

@@ -183,7 +183,7 @@ export default function TransparencyPage() {
     <div className="space-y-10 py-6 sm:py-10">
       
       {/* Hero Header */}
-      <div className="surface-card-solid p-8 sm:p-12 text-center space-y-4 rounded-3xl relative overflow-hidden border border-surface-border shadow-card">
+      <div className="lucid-glass-plate specular-edge p-8 sm:p-12 text-center space-y-4 rounded-[2.5rem] relative overflow-hidden border border-black/[0.06] dark:border-white/[0.08] shadow-card">
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-md-red via-md-gold to-md-red" />
         
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-gold text-xs font-bold text-md-black shadow-sm">
@@ -191,7 +191,7 @@ export default function TransparencyPage() {
           <span>Public Transparency & Open Data Portal</span>
         </div>
 
-        <h1 className="text-3xl sm:text-5xl font-black text-content-primary tracking-tight font-display">
+        <h1 className="text-3xl sm:text-5xl font-black text-content-primary tracking-[-0.03em] font-display">
           City Infrastructure Transparency
         </h1>
         <p className="text-content-secondary text-base max-w-2xl mx-auto leading-relaxed">
@@ -206,38 +206,123 @@ export default function TransparencyPage() {
       ) : (
         <div className="space-y-10">
           
-          {/* Key Metric Tiles (Solid White Cards) */}
+          {/* Key Metric Tiles (Lucid Glass Panels) */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
-            <div className="surface-card-solid p-4 text-center rounded-2xl border border-surface-border">
+            <div className="lucid-glass-panel p-4 text-center">
               <div className="text-content-muted text-[11px] font-bold uppercase tracking-wider mb-1">Total Reports</div>
-              <div className="text-2xl font-black text-content-primary font-display">{data?.total_reports || 149}</div>
+              <div className="text-2xl font-black text-content-primary font-display tabular-nums">{data?.total_reports || 149}</div>
             </div>
 
-            <div className="surface-card-solid p-4 text-center rounded-2xl border border-surface-border">
+            <div className="lucid-glass-panel p-4 text-center">
               <div className="text-content-muted text-[11px] font-bold uppercase tracking-wider mb-1">Resolved</div>
-              <div className="text-2xl font-black text-content-primary font-display">{data?.resolved_reports || 133}</div>
+              <div className="text-2xl font-black text-content-primary font-display tabular-nums">{data?.resolved_reports || 133}</div>
             </div>
 
-            <div className="surface-card-solid p-4 text-center rounded-2xl border border-surface-border">
+            <div className="lucid-glass-panel p-4 text-center">
               <div className="text-content-muted text-[11px] font-bold uppercase tracking-wider mb-1">Resolution Rate</div>
-              <div className="text-2xl font-black text-content-primary font-display">{data?.resolution_rate_pct || 89}%</div>
+              <div className="text-2xl font-black text-content-primary font-display tabular-nums">{data?.resolution_rate_pct || 89}%</div>
             </div>
 
-            <div className="surface-card-solid p-4 text-center rounded-2xl border border-surface-border">
+            <div className="lucid-glass-panel p-4 text-center">
               <div className="text-content-muted text-[11px] font-bold uppercase tracking-wider mb-1">SLA Target</div>
-              <div className="text-2xl font-black text-content-primary font-display">{data?.sla_compliance_pct || 94}%</div>
+              <div className="text-2xl font-black text-content-primary font-display tabular-nums">{data?.sla_compliance_pct || 94}%</div>
             </div>
 
-            <div className="surface-card-solid p-4 text-center rounded-2xl border border-surface-border">
+            <div className="lucid-glass-panel p-4 text-center">
               <div className="text-content-muted text-[11px] font-bold uppercase tracking-wider mb-1">Avg Response</div>
-              <div className="text-2xl font-black text-content-primary font-display">{data?.avg_response_hours || 2.4}h</div>
+              <div className="text-2xl font-black text-content-primary font-display tabular-nums">{data?.avg_response_hours || 2.4}h</div>
             </div>
 
-            <div className="surface-card-solid p-4 text-center rounded-2xl border border-surface-border">
+            <div className="lucid-glass-panel p-4 text-center">
               <div className="text-content-muted text-[11px] font-bold uppercase tracking-wider mb-1">Avg Turnaround</div>
-              <div className="text-2xl font-black text-content-primary font-display">{data?.avg_resolution_days || 1.8}d</div>
+              <div className="text-2xl font-black text-content-primary font-display tabular-nums">{data?.avg_resolution_days || 1.8}d</div>
             </div>
           </div>
+
+          {/* Department Directory Cards */}
+          <section className="space-y-4">
+            <div className="border-b border-surface-border pb-3">
+              <h2 className="text-2xl font-black tracking-tight text-content-primary font-display">
+                Municipal Operations Directory
+              </h2>
+              <p className="text-xs sm:text-sm text-content-secondary mt-0.5">
+                Real-time dispatch status, SLA compliance curves, and equity index across agency departments.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+              {[
+                {
+                  code: 'DPW-HWY',
+                  name: 'Public Works — Highway',
+                  focus: 'Asphalt fissure repair, potholes & bridges',
+                  sla: '24h Target',
+                  slaMet: '97.4%',
+                  equity: '96.2 Index',
+                  activeCrews: 8,
+                },
+                {
+                  code: 'DOT-ELEC',
+                  name: 'Transportation & Signals',
+                  focus: 'Streetlights, pedestrian beacons & signals',
+                  sla: '36h Target',
+                  slaMet: '95.1%',
+                  equity: '94.8 Index',
+                  activeCrews: 5,
+                },
+                {
+                  code: 'DPW-SANI',
+                  name: 'Sanitation & Urban Care',
+                  focus: 'Trash bins, illegal dumping & street sweeps',
+                  sla: '16h Target',
+                  slaMet: '98.5%',
+                  equity: '98.1 Index',
+                  activeCrews: 12,
+                },
+                {
+                  code: 'WTR-SEW',
+                  name: 'Water & Sewer Authority',
+                  focus: 'Main line leaks, storm drains & hydrants',
+                  sla: '12h Target',
+                  slaMet: '99.0%',
+                  equity: '97.4 Index',
+                  activeCrews: 6,
+                },
+              ].map((dept) => (
+                <div key={dept.code} className="lucid-glass-panel p-6 flex flex-col justify-between space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-md bg-black/[0.05] text-[#5b403e]">
+                        {dept.code}
+                      </span>
+                      <span className="lucid-chip lucid-chip-resolved text-[10px]">
+                        <span className="beacon-dot" />
+                        <span>{dept.activeCrews} Active Crews</span>
+                      </span>
+                    </div>
+
+                    <h3 className="font-bold text-base text-content-primary leading-tight">
+                      {dept.name}
+                    </h3>
+                    <p className="text-xs text-content-secondary leading-snug">
+                      {dept.focus}
+                    </p>
+                  </div>
+
+                  <div className="pt-3 border-t border-black/[0.06] space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-content-muted font-semibold">SLA Target</span>
+                      <span className="font-bold text-content-primary">{dept.sla} ({dept.slaMet})</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-content-muted font-semibold">Equity Score</span>
+                      <span className="font-bold text-[#775a00]">{dept.equity}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
 
           {/* ========================================================================= */}
           {/* DYNAMIC CLIENT CHARTS (SSR: FALSE FOR INSTANT PAGE LOAD)                 */}

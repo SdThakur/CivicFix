@@ -10,7 +10,11 @@ import {
   ShieldAlert,
   Loader2,
   ExternalLink,
-  Info
+  Info,
+  ThumbsUp,
+  Clock,
+  Sparkles,
+  Share2
 } from 'lucide-react';
 import { analyticsApi, issueApi, reportApi } from '@/lib/api';
 import type { Issue } from '@/types';
@@ -138,7 +142,7 @@ export default function LandingPage() {
       {/* ========================================================================= */}
       {/* PHASE 2 REQUIREMENT 1: SPLIT HERO WITH HEADLINE/CTAS & LIVE MINI-MAP      */}
       {/* ========================================================================= */}
-      <section className="surface-card-solid p-6 sm:p-10 lg:p-12 relative overflow-hidden rounded-3xl border border-surface-border shadow-card">
+      <section className="lucid-glass-plate specular-edge p-6 sm:p-10 lg:p-12 relative overflow-hidden rounded-[2.5rem] border border-black/[0.06] dark:border-white/[0.08]">
         {/* Subtle Maryland Accent Top Edge Stripe */}
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-md-red via-md-gold to-md-red" />
 
@@ -165,8 +169,8 @@ export default function LandingPage() {
             </div>
 
             {/* Display Heading: High-Contrast Black with Maryland Red Focus */}
-            <h1 className="text-3xl sm:text-5xl lg:text-5xl font-black tracking-tight text-content-primary font-display leading-[1.12]">
-              Make Your City Better with <span className="text-md-red">AI-Powered Infrastructure Ops</span>
+            <h1 className="text-3xl sm:text-5xl lg:text-5xl font-black tracking-[-0.035em] text-content-primary font-display leading-[1.12]">
+              Make Your City Better with <span className="text-[#b61825]">AI-Powered Infrastructure Ops</span>
             </h1>
 
             {/* High-Legibility Left-Aligned Subhead */}
@@ -414,6 +418,116 @@ export default function LandingPage() {
       </section>
 
       {/* ========================================================================= */}
+      {/* LUCID CIVIC GLASS: REAL-TIME INCIDENT FEED (32px SQUIRCLE PANELS)         */}
+      {/* ========================================================================= */}
+      <section className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-surface-border pb-3">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#b61825]/10 text-[#b61825] text-xs font-bold tracking-tight mb-2 border border-[#b61825]/20">
+              <span className="w-2 h-2 rounded-full bg-[#b61825] animate-ping" />
+              <span>Real-Time Municipal Dispatch Radar</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black tracking-[-0.025em] text-content-primary font-display">
+              Live Incident Activity
+            </h2>
+            <p className="text-xs sm:text-sm text-content-secondary mt-0.5">
+              Verified community reports triaged by computer vision with real-time field crew dispatch status.
+            </p>
+          </div>
+          <Link 
+            href="/map" 
+            className="text-xs font-bold text-[#b61825] hover:underline flex items-center gap-1.5 min-h-[44px]"
+          >
+            <span>Explore live interactive map</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+
+        {/* 3-Column Glass Squircle Incident Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {recentIssues.slice(0, 6).map((issue, idx) => {
+            const incidentCode = `#MD-${7000 + (parseInt(String(issue.id).replace(/\D/g, '')) || idx * 17 + 49)}`;
+            const isResolved = issue.status === 'RESOLVED';
+            const isCritical = issue.severity === 'CRITICAL' || (issue.priority_score && issue.priority_score > 75);
+
+            return (
+              <article 
+                key={issue.id} 
+                className="lucid-glass-panel p-6 flex flex-col justify-between group"
+              >
+                <div className="space-y-4">
+                  {/* Isolated Header Zone with Tabular Numerals & Status Beacon */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-xs font-bold tracking-wider text-[#5b403e] bg-black/[0.04] px-2.5 py-1 rounded-lg border border-black/[0.06] tabular-nums">
+                      {incidentCode}
+                    </span>
+
+                    {isResolved ? (
+                      <span className="lucid-chip lucid-chip-resolved">
+                        <span className="beacon-dot" />
+                        <span>Resolved</span>
+                      </span>
+                    ) : isCritical ? (
+                      <span className="lucid-chip lucid-chip-critical">
+                        <span className="beacon-dot" />
+                        <span>Critical Priority</span>
+                      </span>
+                    ) : (
+                      <span className="lucid-chip lucid-chip-review">
+                        <span className="beacon-dot" />
+                        <span>In Dispatch</span>
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Title & Category Badge */}
+                  <div className="space-y-1.5">
+                    <div className="inline-block px-2.5 py-0.5 rounded-md bg-[#ffc72c]/15 text-[#775a00] text-[11px] font-bold uppercase tracking-wider">
+                      {issue.category}
+                    </div>
+                    <h3 className="text-lg font-bold text-content-primary leading-snug group-hover:text-[#b61825] transition-colors">
+                      {issue.title}
+                    </h3>
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-xs text-content-secondary line-clamp-2 leading-relaxed">
+                    {issue.description || 'Hazard verified via computer vision with multi-point risk index assessment.'}
+                  </p>
+
+                  {/* Geospatial Address */}
+                  {issue.location?.address && (
+                    <div className="flex items-center gap-1.5 text-xs text-[#767475] pt-1">
+                      <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-[#b61825]" />
+                      <span className="truncate">{issue.location.address}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Luminous Bottom Shelf with Citizen Endorsement */}
+                <div className="mt-5 pt-4 border-t border-black/[0.06] dark:border-white/[0.08] flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#1b1c19]">
+                    <span className="p-1.5 rounded-full bg-[#ffc72c]/20 text-[#775a00]">
+                      <ThumbsUp className="w-3.5 h-3.5" />
+                    </span>
+                    <span className="tabular-nums">{issue.report_count || 1} Citizen Endorsements</span>
+                  </div>
+
+                  <Link 
+                    href={`/map?lat=${issue.location?.latitude || 38.9784}&lng=${issue.location?.longitude || -76.4922}`}
+                    className="text-xs font-bold text-[#b61825] hover:text-[#d9353a] flex items-center gap-1 transition-colors"
+                  >
+                    <span>View on map</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
       {/* PHASE 2 REQUIREMENT 4: ASYMMETRIC CARD RHYTHM (NO SQUIRCLE ICON BADGES)   */}
       {/* ========================================================================= */}
       <section className="space-y-6">
@@ -436,18 +550,18 @@ export default function LandingPage() {
         </div>
 
         {/* Asymmetric Bento-Style Layout with Left-Aligned Text */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
           
           {/* Featured Primary Hazard: Spans 7 columns on desktop */}
-          <div className="md:col-span-7 surface-card-solid p-6 rounded-3xl border border-surface-border hover:border-surface-border-strong transition-all flex flex-col justify-between space-y-4">
+          <div className="md:col-span-7 lucid-glass-panel p-7 flex flex-col justify-between space-y-4">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="px-3 py-1 rounded-full bg-md-red-subtle text-md-red font-black text-xs tracking-wider uppercase border border-md-red/20">
+                <span className="px-3 py-1 rounded-full bg-[#b61825]/10 text-[#b61825] font-black text-xs tracking-wider uppercase border border-[#b61825]/20">
                   Priority 1 Corridor Service
                 </span>
                 <span className="text-xs font-bold text-content-muted">Roads & Highways</span>
               </div>
-              <h3 className="text-xl sm:text-2xl font-black text-content-primary font-display leading-tight">
+              <h3 className="text-xl sm:text-2xl font-black text-content-primary font-display tracking-tight leading-tight">
                 Roadway & Pothole Hazard Response
               </h3>
               <p className="text-sm text-content-secondary leading-relaxed">
@@ -455,7 +569,7 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="pt-4 border-t border-surface-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="pt-4 border-t border-black/[0.06] dark:border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-4 text-xs font-bold text-content-primary">
                 <div>
                   <span className="text-content-muted block text-[10px] uppercase font-semibold">Triage Speed</span>
@@ -479,10 +593,10 @@ export default function LandingPage() {
           </div>
 
           {/* Secondary Medium Card: Electrical & Lighting (Spans 5 cols) */}
-          <div className="md:col-span-5 surface-card-solid p-6 rounded-3xl border border-surface-border hover:border-surface-border-strong transition-all flex flex-col justify-between space-y-4">
+          <div className="md:col-span-5 lucid-glass-panel p-7 flex flex-col justify-between space-y-4">
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="px-2.5 py-1 rounded-full bg-md-gold-subtle text-md-black font-black text-[11px] tracking-wide uppercase border border-md-gold/30">
+                <span className="px-2.5 py-1 rounded-full bg-[#ffc72c]/20 text-[#6f5400] font-black text-[11px] tracking-wide uppercase border border-[#ffc72c]/30">
                   Public Safety
                 </span>
                 <span className="text-xs font-bold text-content-muted">Electrical Bureau</span>
@@ -495,11 +609,11 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="pt-3 border-t border-surface-border flex items-center justify-between">
+            <div className="pt-3 border-t border-black/[0.06] dark:border-white/[0.08] flex items-center justify-between">
               <span className="text-xs font-semibold text-content-muted">BGE & Municipal Grid</span>
               <Link 
                 href="/report?category=streetlight" 
-                className="text-xs font-bold text-content-primary hover:text-md-red flex items-center gap-1"
+                className="text-xs font-bold text-content-primary hover:text-[#b61825] flex items-center gap-1"
               >
                 <span>Report Light</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -508,20 +622,20 @@ export default function LandingPage() {
           </div>
 
           {/* Tertiary Row: 4 Varied Compact Cards (3 cols each on desktop) */}
-          <div className="md:col-span-3 surface-card-solid p-5 rounded-2xl border border-surface-border hover:border-surface-border-strong transition-all flex flex-col justify-between space-y-3">
+          <div className="md:col-span-3 lucid-glass-panel p-6 flex flex-col justify-between space-y-3">
             <div className="space-y-1.5">
               <div className="text-[10px] font-black tracking-wider text-content-muted uppercase">Sanitation</div>
-              <h4 className="font-bold text-sm text-content-primary">Overflowing Waste & Illegal Dumping</h4>
+              <h4 className="font-bold text-sm text-content-primary">Overflowing Waste & Dumping</h4>
               <p className="text-xs text-content-secondary leading-snug">
                 Municipal trash container spillover and bulk debris blocking alleys.
               </p>
             </div>
-            <Link href="/report?category=trash" className="text-xs font-bold text-content-primary hover:text-md-red flex items-center gap-1">
+            <Link href="/report?category=trash" className="text-xs font-bold text-[#b61825] hover:underline flex items-center gap-1">
               <span>Report Waste →</span>
             </Link>
           </div>
 
-          <div className="md:col-span-3 surface-card-solid p-5 rounded-2xl border border-surface-border hover:border-surface-border-strong transition-all flex flex-col justify-between space-y-3">
+          <div className="md:col-span-3 lucid-glass-panel p-6 flex flex-col justify-between space-y-3">
             <div className="space-y-1.5">
               <div className="text-[10px] font-black tracking-wider text-content-muted uppercase">ADA Accessibility</div>
               <h4 className="font-bold text-sm text-content-primary">Damaged Sidewalks & Curb Ramps</h4>
@@ -529,12 +643,12 @@ export default function LandingPage() {
                 Concrete heaves, broken pedestrian curbs, wheelchair ramp obstacles.
               </p>
             </div>
-            <Link href="/report?category=sidewalk" className="text-xs font-bold text-content-primary hover:text-md-red flex items-center gap-1">
+            <Link href="/report?category=sidewalk" className="text-xs font-bold text-[#b61825] hover:underline flex items-center gap-1">
               <span>Report Sidewalk →</span>
             </Link>
           </div>
 
-          <div className="md:col-span-3 surface-card-solid p-5 rounded-2xl border border-surface-border hover:border-surface-border-strong transition-all flex flex-col justify-between space-y-3">
+          <div className="md:col-span-3 lucid-glass-panel p-6 flex flex-col justify-between space-y-3">
             <div className="space-y-1.5">
               <div className="text-[10px] font-black tracking-wider text-content-muted uppercase">Parks & Forestry</div>
               <h4 className="font-bold text-sm text-content-primary">Fallen Trees & Storm Hazards</h4>
@@ -542,12 +656,12 @@ export default function LandingPage() {
                 Fallen branches across utility lines or blocking vehicular traffic.
               </p>
             </div>
-            <Link href="/report?category=tree" className="text-xs font-bold text-content-primary hover:text-md-red flex items-center gap-1">
+            <Link href="/report?category=tree" className="text-xs font-bold text-[#b61825] hover:underline flex items-center gap-1">
               <span>Report Tree →</span>
             </Link>
           </div>
 
-          <div className="md:col-span-3 surface-card-solid p-5 rounded-2xl border border-surface-border hover:border-surface-border-strong transition-all flex flex-col justify-between space-y-3">
+          <div className="md:col-span-3 lucid-glass-panel p-6 flex flex-col justify-between space-y-3">
             <div className="space-y-1.5">
               <div className="text-[10px] font-black tracking-wider text-content-muted uppercase">Urban Care</div>
               <h4 className="font-bold text-sm text-content-primary">Graffiti & Surface Vandalism</h4>
@@ -555,7 +669,7 @@ export default function LandingPage() {
                 Defaced public monuments, road signs, and municipal property.
               </p>
             </div>
-            <Link href="/report?category=graffiti" className="text-xs font-bold text-content-primary hover:text-md-red flex items-center gap-1">
+            <Link href="/report?category=graffiti" className="text-xs font-bold text-[#b61825] hover:underline flex items-center gap-1">
               <span>Report Graffiti →</span>
             </Link>
           </div>

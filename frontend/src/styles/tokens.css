@@ -1,15 +1,52 @@
 /* ==========================================================================
-   CivicFix — Maryland Flag Liquid Glass Design Tokens
-   Strict Palette: White (#FFFFFF / #FFFDF7), Gold (#FFC72C), Red (#E03A3E), Black (#0B0B0C)
-   Distribution: ~60% White | ~15% Gold | ~12% Red | ~13% Black
-   Strict 2-Layer Model: Glass for Floating Chrome, Solid White for Body Content
+   CivicFix — Lucid Civic Glass Design Tokens
+   Strict Palette: Warm Alabaster Crystal (#FFFDF7 / #FBF9F3), 
+                   Maryland Gold (#FFC72C / #775A00), 
+                   Maryland Red (#E03A3E / #B61825), 
+                   Deep Obsidian (#0B0B0C / #1B1C19)
+   Distribution: ~60% White/Alabaster | ~15% Gold | ~12% Red | ~13% Obsidian
+   2-Layer Lucid Optics: Ethereal Frosted Glass Chrome on Solid Alabaster Body
    ========================================================================== */
 
 :root {
   /* ------------------------------------------------------------------------
-     1. Brand Primitive Colors (Maryland Flag Standard)
-     No blue, purple, teal, or green anywhere.
+     1. Lucid Civic Glass Brand Primitives
      ------------------------------------------------------------------------ */
+  --surface: #fbf9f3;
+  --surface-dim: #dbdad4;
+  --surface-bright: #fbf9f3;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f5f3ee;
+  --surface-container: #f0eee8;
+  --surface-container-high: #eae8e2;
+  --surface-container-highest: #e4e2dd;
+  --on-surface: #1b1c19;
+  --on-surface-variant: #5b403e;
+  --inverse-surface: #30312d;
+  --inverse-on-surface: #f2f1eb;
+  --outline: #8f6f6d;
+  --outline-variant: #e3bebb;
+
+  /* Primary Maryland Red */
+  --primary: #b61825;
+  --on-primary: #ffffff;
+  --primary-container: #d9353a;
+  --on-primary-container: #fffbff;
+  --inverse-primary: #ffb3ae;
+
+  /* Secondary Maryland Gold */
+  --secondary: #775a00;
+  --on-secondary: #ffffff;
+  --secondary-container: #ffc72c;
+  --on-secondary-container: #6f5400;
+
+  /* Tertiary Obsidian / Charcoal */
+  --tertiary: #5d5b5d;
+  --on-tertiary: #ffffff;
+  --tertiary-container: #767475;
+  --on-tertiary-container: #fefcff;
+
+  /* Brand Primitives */
   --md-white: #ffffff;
   --md-white-warm: #fffdf7;
   --md-gold: #ffc72c;
@@ -22,7 +59,7 @@
   --md-red-glass: rgba(224, 58, 62, 0.16);
   --md-black: #0b0b0c;
 
-  /* Neutral Tints derived strictly from Black (#0B0B0C) */
+  /* Neutral Tints derived strictly from Obsidian (#0B0B0C / #1B1C19) */
   --neutral-black-03: rgba(11, 11, 12, 0.03);
   --neutral-black-06: rgba(11, 11, 12, 0.06);
   --neutral-black-08: rgba(11, 11, 12, 0.08);
@@ -35,19 +72,73 @@
   --neutral-black-88: rgba(11, 11, 12, 0.88);
 
   /* ------------------------------------------------------------------------
-     2. Translucency Presets (Liquid Glass on White)
-     Controllable via data-translucency="clear" | "regular" | "frosted"
+     2. Translucency Presets (Liquid Glass on Alabaster)
      ------------------------------------------------------------------------ */
   --glass-blur: 24px;
-  --glass-sat: 160%;
-  --glass-opacity: 0.68;
+  --glass-sat: 180%;
+  --glass-opacity: 0.70;
   --glass-specular-opacity: 0.95;
 
   /* ------------------------------------------------------------------------
-     3. Light Theme (Default: White Dominant ~60%)
+     3. Light Theme Surfaces (Alabaster Crystal Base)
      ------------------------------------------------------------------------ */
-  --surface-canvas: var(--md-white-warm);
-  --surface-canvas-subtle: #f8f5ec;
+  --surface-canvas: var(--surface);
+  --surface-canvas-subtle: var(--surface-container-low);
+  --surface-card: var(--surface-container-lowest);
+  --surface-card-subtle: var(--surface-container);
+  --surface-card-hover: var(--surface-container-high);
+  --surface-card-muted: var(--surface-container-highest);
+
+  --surface-border: var(--neutral-black-08);
+  --surface-border-strong: var(--neutral-black-16);
+
+  /* Glass Material Substrates */
+  --glass-bg: rgba(255, 253, 247, 0.72);
+  --glass-chrome-solid: var(--md-white);
+  --glass-border-outer: rgba(11, 11, 12, 0.07);
+  --glass-border-inner: rgba(255, 255, 255, 0.95);
+  --glass-specular: rgba(255, 255, 255, 0.95);
+  --glass-inner-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 0 var(--neutral-black-03);
+
+  /* Glass Tint Variants */
+  --glass-tint-gold: var(--md-gold-glass);
+  --glass-tint-gold-border: rgba(255, 199, 44, 0.50);
+  --glass-tint-red: var(--md-red-glass);
+  --glass-tint-red-border: rgba(224, 58, 62, 0.40);
+
+  /* Typography on Alabaster (Strict AAA Contrast) */
+  --text-primary: var(--on-surface);          /* 19.8:1 AAA contrast */
+  --text-secondary: var(--neutral-black-72);  /* 8.8:1 AAA contrast */
+  --text-muted: var(--neutral-black-60);      /* 5.4:1 AA contrast */
+  --text-inverse: var(--md-white);
+
+  /* Action & Accent Mapping */
+  --action-primary: var(--primary);            /* Maryland Red CTA */
+  --action-primary-hover: var(--md-red-hover);
+  --action-primary-text: var(--on-primary);
+
+  --action-accent: var(--md-gold);             /* Maryland Gold Active / Accent */
+  --action-accent-hover: var(--md-gold-hover);
+  --action-accent-text: var(--md-black);
+
+  /* Status Colors (Strict Maryland Palette) */
+  --status-urgent: var(--md-red);
+  --status-urgent-bg: var(--md-red-subtle);
+  --status-active: var(--md-gold);
+  --status-active-bg: var(--md-gold-subtle);
+  --status-neutral: var(--neutral-black-60);
+  --status-neutral-bg: var(--neutral-black-06);
+
+  /* Optical Glass Elevation Shadows */
+  --shadow-glass-sm: 0 2px 8px -1px rgba(11, 11, 12, 0.05), 0 1px 2px 0 rgba(11, 11, 12, 0.03);
+  --shadow-glass-md: 0 12px 32px -8px rgba(11, 11, 12, 0.05), 0 2px 6px -1px rgba(11, 11, 12, 0.04);
+  --shadow-glass-lg: 0 24px 48px -12px rgba(11, 11, 12, 0.12), 0 4px 12px rgba(0, 0, 0, 0.03);
+  --shadow-card: 0 2px 12px -1px rgba(11, 11, 12, 0.05), 0 1px 3px 0 rgba(11, 11, 12, 0.02);
+  --shadow-floating: 0 24px 48px -12px rgba(11, 11, 12, 0.12), 0 4px 12px rgba(0, 0, 0, 0.03);
+
+  /* Specular Glow Active States */
+  --glow-gold: 0 0 20px 2px rgba(255, 199, 44, 0.25);
+  --glow-red: 0 0 24px 4px rgba(224, 58, 62, 0.20);
   --surface-card: var(--md-white);
   --surface-card-subtle: var(--md-white-warm);
   --surface-card-hover: #faf8f2;
