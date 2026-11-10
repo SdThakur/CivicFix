@@ -9,7 +9,9 @@ export default function MainContentWrapper({ children }: { children: React.React
 
   return (
     <main
-      className={`flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 relative z-10 transition-all ${
+      id="main-content"
+      tabIndex={-1}
+      className={`flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 relative z-10 transition-all focus:outline-none ${
         isMap
           ? 'py-2 sm:py-4 pb-20 md:pb-4 flex flex-col min-h-0'
           : 'py-6 pb-24 md:pb-12'

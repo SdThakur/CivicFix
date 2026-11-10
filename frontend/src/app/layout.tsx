@@ -32,6 +32,13 @@ export default function RootLayout({
   return (
     <html lang="en" data-translucency="regular">
       <body className="bg-surface-canvas text-content-primary min-h-screen flex flex-col antialiased relative selection:bg-md-gold-subtle selection:text-md-black">
+        {/* Skip to Main Content Link (WCAG B10 Ship Requirement) */}
+        <a 
+          href="#main-content" 
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-[#1b1c19] focus:text-white focus:rounded-xl focus:font-bold focus:shadow-xl focus:ring-2 focus:ring-[#ffc72c]"
+        >
+          Skip to main content
+        </a>
         <QueryProvider>
           <SupabaseAuthProvider>
             <I18nProvider>
