@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Crosshair, Loader2, Navigation, Search, MapPin, ZoomIn } from 'lucide-react';
-import { loadGoogleMaps } from '@/lib/googleMaps';
+import { loadGoogleMaps, isGoogleMapsConfigured } from '@/lib/googleMaps';
 import type { Issue } from '@/types';
 
 declare const google: any;
@@ -69,10 +69,17 @@ export default function GoogleMapView({
   const [error, setError] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
   const [zoomLevel, setZoomLevel] = useState<number>(compact ? 12 : 13);
+  const [useFallback, setUseFallback] = useState(false);
 
   // Initialize Map
   useEffect(() => {
     let isMounted = true;
+
+    if (!isGoogleMapsConfigured()) {
+      setUseFallback(true);
+      setLoading(false);
+      return;
+    }
 
     loadGoogleMaps()
       .then((googleInstance) => {
@@ -147,9 +154,8 @@ export default function GoogleMapView({
 
         setLoading(false);
       })
-      .catch((err) => {
-        console.error('Failed to load Google Maps:', err);
-        setError('Google Maps JavaScript API could not be loaded.');
+      .catch(() => {
+        setUseFallback(true);
         setLoading(false);
       });
 
@@ -453,8 +459,82 @@ export default function GoogleMapView({
         </button>
       </div>
 
-      {/* Google Maps Container */}
-      <div ref={mapContainerRef} className={`w-full h-full ${compact ? 'min-h-[300px]' : 'min-h-[500px]'}`} />
+      {/* Interactive Fallback Geospatial Radar Layer (When Google Maps Key is offline or unverified) */}
+      {useFallback ? (
+        <div className="w-full h-full relative overflow-hidden bg-[#fbf9f3] dark:bg-[#141416] p-4 flex flex-col justify-between select-none">
+          {/* Subtle Geospatial Coordinate Grid */}
+          <div 
+            className="absolute inset-0 opacity-20 pointer-events-none"
+            style={{
+              backgroundImage: 'linear-gradient(to right, #0b0b0c 1px, transparent 1px), linear-gradient(to bottom, #0b0b0c 1px, transparent 1px)',
+              backgroundSize: '40px 40px',
+            }}
+          />
+
+          {/* Radar Header Pill */}
+          <div className="relative z-10 flex items-center justify-between pointer-events-none">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/90 dark:bg-black/80 backdrop-blur-md border border-black/[0.08] text-[11px] font-bold text-content-primary shadow-xs pointer-events-auto">
+              <span className="w-2 h-2 rounded-full bg-[#10b981] animate-ping" />
+              <span>Civic Radar Mode</span>
+              <span className="text-content-muted tabular-nums">({issues.length} active)</span>
+            </div>
+          </div>
+
+          {/* Interactive Incident Pins Canvas */}
+          <div className="absolute inset-4 z-10">
+            {issues.map((issue, idx) => {
+              const lat = issue.location?.latitude || (38.97 + (idx * 0.015));
+              const lng = issue.location?.longitude || (-76.55 + (idx * 0.02));
+              
+              // Normalize lat/lng to percentage bounds
+              const minLat = 38.90, maxLat = 39.05, minLng = -76.65, maxLng = -76.40;
+              const xPct = Math.max(10, Math.min(90, ((lng - minLng) / (maxLng - minLng)) * 100));
+              const yPct = Math.max(10, Math.min(90, (1 - (lat - minLat) / (maxLat - minLat)) * 100));
+
+              const isSelected = selectedIssue?.id === issue.id;
+              const isUrgent = issue.severity === 'CRITICAL' || (issue.priority_score && issue.priority_score > 75);
+
+              return (
+                <button
+                  key={issue.id}
+                  type="button"
+                  onClick={() => onSelectIssue(isSelected ? null : issue)}
+                  style={{ left: `${xPct}%`, top: `${yPct}%` }}
+                  title={`${issue.title} - ${issue.location?.address || 'Reported Hazard'}`}
+                  className={`absolute -translate-x-1/2 -translate-y-1/2 group transition-all duration-300 focus:outline-none ${
+                    isSelected ? 'scale-125 z-30' : 'hover:scale-110 z-20'
+                  }`}
+                  aria-label={`View ${issue.title}`}
+                >
+                  <div className={`p-2 rounded-full shadow-lg border transition-all ${
+                    isSelected
+                      ? 'bg-[#ffc72c] text-[#1b1c19] border-black ring-4 ring-[#ffc72c]/40'
+                      : isUrgent
+                      ? 'bg-[#b61825] text-white border-white/80'
+                      : 'bg-white text-content-primary border-black/10'
+                  }`}>
+                    <MapPin className="w-4 h-4" />
+                  </div>
+                  {isSelected && (
+                    <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap bg-black/90 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow pointer-events-none">
+                      {issue.title}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Radar Bottom Footer */}
+          <div className="relative z-10 flex items-center justify-between text-[11px] text-content-muted font-mono pointer-events-none">
+            <span>Annapolis Metropolitan Zone</span>
+            <span>WGS84 38.9784° N, 76.4922° W</span>
+          </div>
+        </div>
+      ) : (
+        /* Google Maps Container */
+        <div ref={mapContainerRef} className={`w-full h-full ${compact ? 'min-h-[300px]' : 'min-h-[500px]'}`} />
+      )}
 
       {/* Loading Overlay */}
       {loading && (

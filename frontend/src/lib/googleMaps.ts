@@ -3,6 +3,14 @@ declare const google: any;
 
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
 
+export function isGoogleMapsConfigured(): boolean {
+  return Boolean(
+    GOOGLE_MAPS_API_KEY && 
+    GOOGLE_MAPS_API_KEY.trim().length > 5 && 
+    !GOOGLE_MAPS_API_KEY.includes('your_google_maps')
+  );
+}
+
 let loadPromise: Promise<any> | null = null;
 
 export function loadGoogleMaps(): Promise<any> {
@@ -12,6 +20,11 @@ export function loadGoogleMaps(): Promise<any> {
 
   if ((window as any).google && (window as any).google.maps) {
     return Promise.resolve((window as any).google);
+  }
+
+  // Prevent unauthenticated API requests that trigger console quota warnings
+  if (!isGoogleMapsConfigured()) {
+    return Promise.reject(new Error('Google Maps API key is not configured or unverified.'));
   }
 
   if (loadPromise) {

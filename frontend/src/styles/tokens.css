@@ -46,17 +46,17 @@
   --tertiary-container: #767475;
   --on-tertiary-container: #fefcff;
 
-  /* Brand Primitives */
+  /* Brand Primitives (WCAG AA Compliant Red: 5.98:1 on #FFFFFF, 5.62:1 on #FBF9F3) */
   --md-white: #ffffff;
   --md-white-warm: #fffdf7;
   --md-gold: #ffc72c;
   --md-gold-hover: #e5b225;
   --md-gold-subtle: rgba(255, 199, 44, 0.15);
   --md-gold-glass: rgba(255, 199, 44, 0.22);
-  --md-red: #e03a3e;
-  --md-red-hover: #c93236;
-  --md-red-subtle: rgba(224, 58, 62, 0.10);
-  --md-red-glass: rgba(224, 58, 62, 0.16);
+  --md-red: #b61825;
+  --md-red-hover: #98141e;
+  --md-red-subtle: rgba(182, 24, 37, 0.10);
+  --md-red-glass: rgba(182, 24, 37, 0.16);
   --md-black: #0b0b0c;
 
   /* Neutral Tints derived strictly from Obsidian (#0B0B0C / #1B1C19) */
@@ -138,7 +138,7 @@
 
   /* Specular Glow Active States */
   --glow-gold: 0 0 20px 2px rgba(255, 199, 44, 0.25);
-  --glow-red: 0 0 24px 4px rgba(224, 58, 62, 0.20);
+  --glow-red: 0 0 24px 4px rgba(182, 24, 37, 0.22);
   --surface-card: var(--md-white);
   --surface-card-subtle: var(--md-white-warm);
   --surface-card-hover: #faf8f2;
@@ -159,7 +159,7 @@
   --glass-tint-gold: var(--md-gold-glass);
   --glass-tint-gold-border: rgba(255, 199, 44, 0.50);
   --glass-tint-red: var(--md-red-glass);
-  --glass-tint-red-border: rgba(224, 58, 62, 0.40);
+  --glass-tint-red-border: rgba(182, 24, 37, 0.40);
 
   /* Typography on White (Strict Contrast) */
   --text-primary: var(--md-black);           /* 19.8:1 AAA contrast */

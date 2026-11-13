@@ -89,7 +89,7 @@ export default function Navbar() {
           <Link href="/" className="flex items-center gap-3 group">
             <div className="w-10 h-10 rounded-xl overflow-hidden bg-white/95 border border-surface-border p-1 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
               <Image
-                src="/logo.png"
+                src="/logo.webp"
                 alt="CivicFix Logo"
                 width={36}
                 height={36}

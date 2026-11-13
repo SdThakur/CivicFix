@@ -19,7 +19,7 @@ export default function Footer() {
         <div className="flex items-center gap-3">
           <div className="w-7 h-7 rounded-lg overflow-hidden bg-white/95 border border-surface-border p-0.5 flex items-center justify-center shadow-xs">
             <Image
-              src="/logo.png"
+              src="/logo.webp"
               alt="CivicFix Logo"
               width={24}
               height={24}

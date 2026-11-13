@@ -49,7 +49,7 @@ export default function RegisterPage() {
       <div className="text-center space-y-2">
         <div className="w-14 h-14 rounded-2xl overflow-hidden bg-white/95 border border-slate-700/60 p-1.5 flex items-center justify-center mx-auto shadow-md">
           <Image
-            src="/logo.png"
+            src="/logo.webp"
             alt="CivicFix Logo"
             width={48}
             height={48}

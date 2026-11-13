@@ -15,7 +15,10 @@ logger = logging.getLogger(__name__)
 def get_redis_settings(dsn: Optional[str] = None) -> RedisSettings:
     """Parse Redis connection string into ARQ RedisSettings."""
     url = dsn or settings.QUEUE_REDIS_URL
-    return RedisSettings.from_dsn(url)
+    rs = RedisSettings.from_dsn(url)
+    rs.conn_retries = 1
+    rs.conn_timeout = 1
+    return rs
 
 
 async def create_queue_pool(dsn: Optional[str] = None) -> Optional[ArqRedis]:

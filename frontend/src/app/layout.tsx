@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Public_Sans } from 'next/font/google';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import GradientBackdrop from '@/components/glass/GradientBackdrop';
@@ -10,16 +11,22 @@ import { ToastProvider } from '@/components/ui/Toast';
 import QueryProvider from '@/lib/providers/QueryProvider';
 import { SupabaseAuthProvider } from '@/lib/supabase/auth';
 
+const publicSans = Public_Sans({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-public-sans',
+});
+
 export const metadata: Metadata = {
   title: 'CivicFix — AI-Powered City Infrastructure Reporting & Operations',
   description: 'Smart municipal infrastructure reporting, computer vision issue classification, duplicate detection, and dispatch management.',
   icons: {
     icon: [
       { url: '/favicon.ico' },
-      { url: '/logo.png', sizes: '1024x1024', type: 'image/png' },
+      { url: '/logo.webp', sizes: '512x512', type: 'image/webp' },
     ],
     apple: [
-      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
     ],
   },
 };
@@ -30,8 +37,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" data-translucency="regular">
-      <body className="bg-surface-canvas text-content-primary min-h-screen flex flex-col antialiased relative selection:bg-md-gold-subtle selection:text-md-black">
+    <html lang="en" data-translucency="regular" className={publicSans.variable}>
+      <body className="bg-surface-canvas text-content-primary min-h-screen flex flex-col antialiased relative selection:bg-md-gold-subtle selection:text-md-black font-sans">
         {/* Skip to Main Content Link (WCAG B10 Ship Requirement) */}
         <a 
           href="#main-content" 

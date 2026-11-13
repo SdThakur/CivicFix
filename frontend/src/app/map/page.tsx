@@ -24,7 +24,23 @@ import type { Issue } from '@/types';
 import StatusBadge from '@/components/ui/StatusBadge';
 import EmptyState from '@/components/ui/EmptyState';
 
-import GoogleMapView from '@/components/map/GoogleMapView';
+import dynamic from 'next/dynamic';
+
+const GoogleMapView = dynamic(
+  () => import('@/components/map/GoogleMapView'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full flex flex-col items-center justify-center bg-surface-canvas/60 p-6 text-center space-y-2">
+        <div className="w-8 h-8 rounded-full bg-[#ffc72c]/20 flex items-center justify-center animate-pulse">
+          <MapPin className="w-4 h-4 text-[#b61825]" />
+        </div>
+        <p className="text-xs font-bold text-content-primary">City Geospatial Radar</p>
+        <p className="text-[11px] text-content-secondary">Loading map tiles...</p>
+      </div>
+    ),
+  }
+);
 
 const CATEGORY_FILTERS = ['ALL', 'Pothole', 'Streetlight', 'Trash', 'Sidewalk', 'Graffiti', 'Road Damage'];
 const STATUS_FILTERS = ['ALL', 'SUBMITTED', 'IN_PROGRESS', 'VERIFICATION', 'RESOLVED'];

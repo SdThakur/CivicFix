@@ -33,7 +33,23 @@ import type { Issue } from '@/types';
 import StatusBadge from '@/components/ui/StatusBadge';
 import CursorAmbient from '@/components/glass/CursorAmbient';
 
-import GoogleMapView from '@/components/map/GoogleMapView';
+import dynamic from 'next/dynamic';
+
+const GoogleMapView = dynamic(
+  () => import('@/components/map/GoogleMapView'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full flex flex-col items-center justify-center bg-surface-canvas/60 p-6 text-center space-y-2">
+        <div className="w-8 h-8 rounded-full bg-[#ffc72c]/20 flex items-center justify-center animate-pulse">
+          <MapPin className="w-4 h-4 text-[#b61825]" />
+        </div>
+        <p className="text-xs font-bold text-content-primary">Interactive Dispatch Radar</p>
+        <p className="text-[11px] text-content-secondary">Loading geospatial layer...</p>
+      </div>
+    ),
+  }
+);
 
 export default function LandingPage() {
   const [stats, setStats] = useState<any>(null);
@@ -176,7 +192,7 @@ export default function LandingPage() {
             {/* Operational Standard Pill */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-gold text-xs font-bold tracking-tight shadow-sm text-md-black">
               <div className="w-4 h-4 rounded-full overflow-hidden bg-white/90 p-0.5 flex items-center justify-center shadow-xs">
-                <Image src="/logo.png" alt="" width={14} height={14} className="w-full h-full object-contain" />
+                <Image src="/logo.webp" alt="" width={14} height={14} className="w-full h-full object-contain" priority />
               </div>
               <span>Maryland Civic Operations Standard</span>
             </div>
